@@ -32,8 +32,8 @@ public:
 		UTextureRenderTarget2D* TextureRenderRef = nullptr;
 	UPROPERTY(BlueprintReadOnly)
 		UTexture2D* Texture = nullptr;
-
-		FRenderTarget* RenderTarget = nullptr;
+	bool flipflop;
+		//FRenderTarget* RenderTarget = nullptr;
 
 	// The rate at which the color data array and video texture is updated (in frames per second)
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Camera, meta = (ClampMin = 0, UIMin = 0))

@@ -1,12 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Interpreter.h"
 
-// Sets default values
 AInterpreter::AInterpreter()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	VideoSize = FVector2D(256, 256);
 	RefreshRate = 30.0f;
@@ -16,31 +11,21 @@ AInterpreter::AInterpreter()
 void AInterpreter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	// Prepare the color data array
 	ColorData.AddDefaulted(VideoSize.X * VideoSize.Y);
+	//create texture from texture render ref
+	if (TextureRenderRef)
+	{
+		Texture = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+	}
+	flipflop = true;
+	RefreshTimer = 0.f;
 	// setup openCV 
-	
+
 	//cvSize = cv::Size(VideoSize.X, VideoSize.Y);
 	//cvMat = new cv::Mat(cvSize, CV_8UC4, ColorData.GetData());
 
-	// create dynamic texture
-	Texture = UTexture2D::CreateTransient(VideoSize.X, VideoSize.Y, PF_B8G8R8A8);
-
-	if (TextureRenderRef)
-	{
-		RenderTarget = TextureRenderRef->GameThread_GetRenderTargetResource();
-		#if WITH_EDITORONLY_DATA
-			Texture->MipGenSettings = TMGS_NoMipmaps;
-		#endif
-			Texture->SRGB = TextureRenderRef->SRGB;
-	}
-
-	//Texture->AddToRoot();				// This line prevents garbage collection of the texture
-	/*Texture->PlatformData = new FTexturePlatformData();	// Then we initialize the PlatformData
-	Texture->PlatformData->SizeX = VideoSize.X;
-	Texture->PlatformData->SizeY = VideoSize.Y;
-	Texture->PlatformData->PixelFormat = EPixelFormat::PF_B8G8R8A8;*/
 }
 
 // Called every frame
@@ -49,36 +34,43 @@ void AInterpreter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RefreshTimer += DeltaTime;
-	//extrem de bizar este faptul ca daca executam citirea de pixeli mai rar, avem mare frame drop
+
 	// Read the pixels from the RenderTarget and store them in a FColor array
 
-	bool succesfull;
-	if (RenderTarget)
+
+	if (TextureRenderRef)
 	{
-		succesfull = RenderTarget->ReadPixels(ColorData);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("renderTarget invalid"));
-		succesfull = false;
-	}
-	if (succesfull)
-	{
-		if (RefreshTimer >= 1.0f / RefreshRate) {
-			RefreshTimer -= 1.0f / RefreshRate;
-			ReadFrame();
+		if (Texture)
+		{
+			if (RefreshTimer >= 1.0f / RefreshRate) 
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%f %f"), RefreshTimer, 1.0f / RefreshRate);
+				TextureRenderRef->UpdateTexture2D(Texture, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
+				if (Texture->PlatformData->Mips[0].BulkData.IsLocked() == false)
+				{
+					Texture->UpdateResource();
+				}
+				RefreshTimer -= 1.0f / RefreshRate;
+				//ReadFrame();
+				//i might actually be a fucking genius 
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Invalid"));
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to read render target"));
+		UE_LOG(LogTemp, Warning, TEXT("renderTarget invalid"));
 	}
 }
 
 void AInterpreter::ReadFrame()
 {
-	//FColor* FormatedImageData = static_cast<FColor*>(Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_ONLY));
+	//FColor* FormatedImageData = static_cast<FColor*>(Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
 	//Texture->PlatformData->Mips[0].BulkData.Unlock();
+
 	//cv::Mat* colorData = new cv::Mat(cvSize, CV_8UC4, ColorData.GetData());
 
 	//colorData->convertTo(*colorData, -1, 1, 0);
@@ -87,9 +79,9 @@ void AInterpreter::ReadFrame()
 
 	// Lock the texture so we can read / write to it
 	// set the texture data
-	
-	FTexture2DMipMap* MyMipMap = &Texture->PlatformData->Mips[0];
-	FByteBulkData* RawImageData = &MyMipMap->BulkData;
+
+	//FTexture2DMipMap* MyMipMap = &Texture->PlatformData->Mips[0];
+	//FByteBulkData* RawImageData = &MyMipMap->BulkData;
 	/*
 	uint8* Pixels = new uint8[VideoSize.X * VideoSize.Y * 4];
 	for (int32 y = 0; y < VideoSize.X; y++)
@@ -114,9 +106,9 @@ void AInterpreter::ReadFrame()
 	Mip->BulkData.Unlock();
 
 	*/
-	
+	/*
 	//FColor* FormatedImageData = static_cast<FColor*>(RawImageData->Lock(LOCK_READ_WRITE));
-	
+
 	FColor* FormatedImageData = static_cast<FColor*>(Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
 	uint32 TextureWidth = MyMipMap->SizeX, TextureHeight = MyMipMap->SizeY;
 	for (uint32 x = 0; x < TextureWidth; x++)
@@ -155,6 +147,6 @@ void AInterpreter::ReadFrame()
 	//how to change texture to a image on a hud
 	//update brush via texture on a image in a widget class
 
-	
+
 }
 
