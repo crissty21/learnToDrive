@@ -8,7 +8,7 @@
 
 AVehiclePawn::AVehiclePawn()
 {
-	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// setup components
 	PrimaryActorTick.bCanEverTick = true;
 	FrontPoint = CreateDefaultSubobject<USceneComponent>("FrontPoint");
 	BackPoint = CreateDefaultSubobject<USceneComponent>("BackPoint");
@@ -97,9 +97,11 @@ void AVehiclePawn::KeepRoad()
 	FVector frontPointCoordinates = FrontPoint->GetComponentLocation();
 	FVector backPointCoordinates = BackPoint->GetComponentLocation();
 
+	//get closest point on spline
 	FVector coordOnSpline = Road->SplineComp->FindLocationClosestToWorldLocation(advancePointCoordinates,ESplineCoordinateSpace::World);
 	coordOnSpline.Z = advancePointCoordinates.Z;
-	//DrawDebugLine(GetWorld(), frontPointCoordinates, coordOnSpline, FColor::Red, false, -1,0,10);
+
+	DrawDebugLine(GetWorld(), frontPointCoordinates, coordOnSpline, FColor::Red, false, -1,0,10);
 
 	FVector L = frontPointCoordinates - backPointCoordinates;
 	FVector ld = coordOnSpline - backPointCoordinates;
