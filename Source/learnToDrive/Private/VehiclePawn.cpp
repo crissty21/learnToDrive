@@ -44,7 +44,7 @@ void AVehiclePawn::BeginPlay()
 	//steering
 	FrontPoint->SetRelativeLocation(FVector(130, 0, 0));
 	BackPoint->SetRelativeLocation(FVector(-125, 0, 0));
-	AdvancePoint->SetRelativeLocation(FVector(700, 0, 0));
+	AdvancePoint->SetRelativeLocation(FVector(400, 0, 0));
 }
 
 void AVehiclePawn::Tick(float DeltaTime)

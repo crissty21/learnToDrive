@@ -30,6 +30,10 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "OpenCV",
+			"Enabled": true
 		}
 	]
 }

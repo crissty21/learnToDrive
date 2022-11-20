@@ -8,7 +8,7 @@ public class learnToDrive : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "OpenCV", "OpenCVHelper", "InputCore", "HeadMountedDisplay", "UMG" });
 
         PrivateDependencyModuleNames.AddRange(
                new string[]
@@ -21,6 +21,8 @@ public class learnToDrive : ModuleRules
                     "RHI",
                     "RHICore",
                     "D3D12RHI",
+                    "OpenCV",
+                    "OpenCVHelper",
                }
            );
 
