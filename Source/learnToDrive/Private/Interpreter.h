@@ -105,11 +105,7 @@ public:
 
 	void GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB);
 
-	void GetLUV(Mat inputRGB, Mat& outputL, Mat& outputU, Mat& outputV);
-
 	Mat BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshold, const FVector2D lThreshold);
-
-	Mat BinaryThresholdHLS(Mat inputRGB, const FVector2D sThreshold, const FVector2D lThreshold);
 
 	Mat GradientThreshold(Mat inputRGB, int channel, const FVector2D threshold);
 	
