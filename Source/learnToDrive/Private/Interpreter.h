@@ -42,7 +42,14 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		UTextureRenderTarget2D* TextureRenderRef = nullptr;
 	UPROPERTY(BlueprintReadOnly)
-		UTexture2D* Texture = nullptr;
+		UTexture2D* Texture1 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+		UTexture2D* Texture2 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+		UTexture2D* Texture3 = nullptr;
+
 	bool flipflop;
 		//FRenderTarget* RenderTarget = nullptr;
 

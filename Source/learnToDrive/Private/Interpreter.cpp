@@ -17,7 +17,9 @@ void AInterpreter::BeginPlay()
 	//create texture from texture render ref
 	if (TextureRenderRef)
 	{
-		Texture = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+		Texture1 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image Raw"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+		Texture2 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image Edges"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+		Texture3 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image combo"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
 	}
 	flipflop = true;
 	RefreshTimer = 0.f;
@@ -43,15 +45,15 @@ void AInterpreter::Tick(float DeltaTime)
 
 	if (TextureRenderRef)
 	{
-		if (Texture)
+		if (Texture2)
 		{
 			if (RefreshTimer >= 1.0f / RefreshRate) 
 			{
-				//TextureRenderRef->UpdateTexture2D(Texture, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
+				TextureRenderRef->UpdateTexture2D(Texture1, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
 				ReadFrame();
-				if (Texture->PlatformData->Mips[0].BulkData.IsLocked() == false)
+				if (Texture1->PlatformData->Mips[0].BulkData.IsLocked() == false)
 				{
-					Texture->UpdateResource();
+					Texture1->UpdateResource();
 				}
 				RefreshTimer -= 1.0f / RefreshRate;
 			}
@@ -92,30 +94,39 @@ void AInterpreter::ReadFrame()
 	{
 		for (int j = 0; j < finalImage.rows; j++)
 		{
-			finalImage.at<Vec<uint8, 4>>(j, i)[0] = ((uint8)(
-				sBinary.at<uint8>(j, i)
-				|| 
-				sxBinary.at<uint8>(j, i)
-				) * 255);
-			finalImage.at<Vec<uint8, 4>>(j, i)[1] = ((uint8)(
+			uint8 result = ((uint8)(
 				sBinary.at<uint8>(j, i)
 				||
 				sxBinary.at<uint8>(j, i)
-				) * 255);
-			finalImage.at<Vec<uint8, 4>>(j, i)[2] = ((uint8)(
-				sBinary.at<uint8>(j, i)
-				||
-				sxBinary.at<uint8>(j, i)
-				) * 255);
+				));
+
+			finalImage.at<Vec<uint8, 4>>(j, i)[0] = result * 255;
+			finalImage.at<Vec<uint8, 4>>(j, i)[1] = result * 255;
+			finalImage.at<Vec<uint8, 4>>(j, i)[2] = result * 255;
 			finalImage.at<Vec<uint8, 4>>(j, i)[3] = 255;
+
+			if (result == 1)
+			{
+				colorData.at<Vec<uint8, 4>>(j, i)[0] = 10;
+				colorData.at<Vec<uint8, 4>>(j, i)[1] = 10;
+				colorData.at<Vec<uint8, 4>>(j, i)[2] = 255;
+			}
+
 		}
 	}
-	void* textureData = Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	const int32 dataSize = 512 * 128 *4* sizeof(uint8);
 	FMemory::Memcpy(textureData, finalImage.data, dataSize);
 
-	Texture->PlatformData->Mips[0].BulkData.Unlock();
-	Texture->UpdateResource();
+	Texture2->PlatformData->Mips[0].BulkData.Unlock();
+	Texture2->UpdateResource();
+
+	void* texture3Data = Texture3->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	FMemory::Memcpy(texture3Data, colorData.data, dataSize);
+
+	Texture3->PlatformData->Mips[0].BulkData.Unlock();
+	Texture3->UpdateResource();
+
 	{
 		/*
 		Vec3b data = outH.at<Vec3b>(0, 0);
