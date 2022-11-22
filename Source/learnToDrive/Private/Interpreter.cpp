@@ -95,16 +95,17 @@ void AInterpreter::ReadFrame()
 	}
 
 	Mat sBinary = BinaryThresholdLAB_LUV(colorData, BChannelThresh, LChannelThresh);
+
 	Mat h, l, s;
 	GetHLS(colorData, h, l, s);
 	Mat sxBinary = GradientThreshold(s, 2, GradientThresh);
 	
 	Mat finalImage = Mat(Size(512, 128), CV_8UC4);
-	for (int i = 0; i < finalImage.cols; i++)
+	for (uint16 i = 0; i < finalImage.cols; i++)
 	{
-		for (int j = 0; j < finalImage.rows; j++)
+		for (uint16 j = 0; j < finalImage.rows; j++)
 		{
-			uint8 result;
+			uint8 result = 0;
 			if (LabThreshold)
 			{
 				if (SobelThreshold)
@@ -141,10 +142,7 @@ void AInterpreter::ReadFrame()
 	
 	if (DrawPerspectiveLines)
 	{
-		line(colorData, Point(srcPts[0]), Point(srcPts[1]), Scalar(255, 0, 0, 255), 2);
-		line(colorData, Point(srcPts[1]), Point(srcPts[2]), Scalar(255, 0, 0, 255), 2);
-		line(colorData, Point(srcPts[2]), Point(srcPts[3]), Scalar(255, 0, 0, 255), 2);
-		line(colorData, Point(srcPts[3]), Point(srcPts[0]), Scalar(255, 0, 0, 255), 2);
+		CreateAndDrawPerspectiveLines(colorData);
 	}	
 	if (PerspectiveWarpRaw && !PerspectiveWarpBinary)
 	{
@@ -156,6 +154,16 @@ void AInterpreter::ReadFrame()
 	
 	Mat hist;
 	Mat channel[4];
+
+	if (Dilate)
+	{
+		dilate(finalImage, finalImage, Mat());
+	}
+	if (Blur)
+	{
+		blur(finalImage, finalImage, Size(6, 6));
+	}
+
 	split(finalImage, channel);
 	reduce(channel[0], hist, 0, REDUCE_SUM, CV_32SC1);
 
@@ -165,20 +173,31 @@ void AInterpreter::ReadFrame()
 		colorData = img;
 	}
 
+	CreateTextures(finalImage, colorData);
+}
 
-
+void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
+{
 	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-	const uint32 dataSize = 512 * 128 *4* sizeof(uint8);
-	FMemory::Memcpy(textureData, finalImage.data, dataSize);
+	const uint32 dataSize = 512 * 128 * 4 * sizeof(uint8);
+	FMemory::Memcpy(textureData, secondImage.data, dataSize);
 
 	Texture2->PlatformData->Mips[0].BulkData.Unlock();
 	Texture2->UpdateResource();
 
 	void* texture3Data = Texture3->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-	FMemory::Memcpy(texture3Data, colorData.data, dataSize);
+	FMemory::Memcpy(texture3Data, thirdImage.data, dataSize);
 
 	Texture3->PlatformData->Mips[0].BulkData.Unlock();
 	Texture3->UpdateResource();
+}
+
+void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
+{
+	line(colorData, Point(srcPts[0]), Point(srcPts[1]), Scalar(255, 0, 0, 255), 2);
+	line(colorData, Point(srcPts[1]), Point(srcPts[2]), Scalar(255, 0, 0, 255), 2);
+	line(colorData, Point(srcPts[2]), Point(srcPts[3]), Scalar(255, 0, 0, 255), 2);
+	line(colorData, Point(srcPts[3]), Point(srcPts[0]), Scalar(255, 0, 0, 255), 2);
 }
 
 Mat AInterpreter::DrawHistogram(Mat& hist)
@@ -192,14 +211,24 @@ Mat AInterpreter::DrawHistogram(Mat& hist)
 	//normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
 	for (int16 i = 1; i < hist_w; i++)
 	{
-		
-		cv::line(
-			histImage,
-			cv::Point((i - 1), hist_h - hist.at<int32>(i - 1) /histSize),
-			cv::Point(i, hist_h - hist.at<int32>(i) /histSize),
-			cv::Scalar(255, 255, 255, 255),2);
-
+		line(histImage,
+			Point((i - 1), hist_h - hist.at<int32>(i - 1) /histSize),
+			Point(i, hist_h - hist.at<int32>(i) /histSize),
+			Scalar(255, 255, 255, 255),2);
 	}
+	Point2i left, right;
+	if (UseBetterMethod)
+	{
+		GetHistogramPeaksFinalMethod(hist, left, right);
+	}
+	else
+	{
+		GetHistogramPeaksFirstMethod(hist, left, right);
+	}
+	left.y = hist_h - left.y / 256;
+	right.y = hist_h - right.y / 256;
+	circle(histImage, left, 3, Scalar(0, 0, 255, 255), 2);
+	circle(histImage, right, 3, Scalar(0, 0, 255, 255), 2);
 	return histImage;
 }
 void AInterpreter::GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS)
@@ -273,5 +302,66 @@ void AInterpreter::CreateLUT(uint8* LUT, FVector2D Threshold)
 			LUT[i] = 0;
 		}
 	}
+}
+
+void AInterpreter::GetHistogramPeaksFirstMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)
+{
+	leftMax.y = rightMax.y = 0;
+	for (uint16 i = 0; i < hist.cols/2; i++)
+	{
+		if (hist.at<int32>(i) > leftMax.y)
+		{
+			leftMax.x = i;
+			leftMax.y = hist.at<int32>(i);
+		}
+	}
+	for (uint16 i = hist.cols / 2; i < hist.cols; i++)
+	{
+		if (hist.at<int32>(i) > rightMax.y)
+		{
+			rightMax.x = i;
+			rightMax.y = hist.at<int32>(i);
+		}
+	}
+}
+
+void AInterpreter::GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)
+{
+
+	Point2i maxLocal(0,0);
+	for (uint16 i = 0; i < hist.cols; i++)
+	{
+		if (hist.at<int32>(i) > maxLocal.y)
+		{
+			maxLocal.x = i;
+			maxLocal.y = hist.at<int32>(i);
+		}
+		if (maxLocal.y != 0)
+		{
+			if (hist.at<int32>(i) < 5*256)
+			{
+				if (maxLocal.y >= leftMax.y)
+				{
+					rightMax = leftMax;
+					leftMax = maxLocal;
+				}
+				else if (maxLocal.y >= rightMax.y)
+				{
+					rightMax = maxLocal;
+				}
+				maxLocal = Point2i(0, 0);
+			}
+		}
+	}
+	if (maxLocal.y >= leftMax.y)
+	{
+		rightMax = leftMax;
+		leftMax = maxLocal;
+	}
+	else if (maxLocal.y >= rightMax.y)
+	{
+		rightMax = maxLocal;
+	}
+	
 }
 

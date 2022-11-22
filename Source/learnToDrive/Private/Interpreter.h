@@ -128,6 +128,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
 		bool ShowHistogram = true;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
+		bool Dilate = false;
+	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
+		bool Blur = false;
+	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
+		bool UseBetterMethod = false;
+
 
 public:
 	//functions
@@ -135,6 +142,10 @@ public:
 	// reads the current video frame
 	UFUNCTION(BlueprintCallable, Category = Data)
 		void ReadFrame();
+
+	void CreateTextures(cv::Mat& finalImage, cv::Mat& colorData);
+
+	void CreateAndDrawPerspectiveLines(cv::Mat& colorData);
 
 	void GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS);
 
@@ -148,5 +159,8 @@ public:
 	
 	void CreateLUT(uint8* LUT, FVector2D Threshold);
 
+	void GetHistogramPeaksFirstMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax);
+
+	void GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax);
 
 };
