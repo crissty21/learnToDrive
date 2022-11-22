@@ -172,6 +172,13 @@ void AInterpreter::ReadFrame()
 		Mat img = DrawHistogram(hist);
 		colorData = img;
 	}
+	if (ShowMaxLane)
+	{
+		Point2i left, right;
+		GetHistogramPeaksFinalMethod(hist, left, right);
+		line(finalImage, Point(left.x, 0), Point(left.x, finalImage.rows), Scalar(255, 0, 0, 255), 2);
+		line(finalImage, Point(right.x, 0), Point(right.x, finalImage.rows), Scalar(255, 0, 0, 255), 2);
+	}
 
 	CreateTextures(finalImage, colorData);
 }
@@ -229,6 +236,7 @@ Mat AInterpreter::DrawHistogram(Mat& hist)
 	right.y = hist_h - right.y / 256;
 	circle(histImage, left, 3, Scalar(0, 0, 255, 255), 2);
 	circle(histImage, right, 3, Scalar(0, 0, 255, 255), 2);
+
 	return histImage;
 }
 void AInterpreter::GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS)

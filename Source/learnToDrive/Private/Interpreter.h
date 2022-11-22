@@ -82,6 +82,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
 		bool DrawEdgesInRed = true;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
+		bool ShowMaxLane = false;
+
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
 		FVector2D SChannelThresh = FVector2D(80, 255);
@@ -134,6 +137,7 @@ public:
 		bool Blur = false;
 	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
 		bool UseBetterMethod = false;
+
 
 
 public:
