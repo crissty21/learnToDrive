@@ -120,8 +120,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Perspective Wrap")
 		bool PerspectiveWarpBinary = true;
+
 	Point2f srcPts[4];
 	Point2f destPts[4];
+
+
 
 public:
 	//functions
@@ -133,6 +136,8 @@ public:
 	void GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS);
 
 	void GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB);
+	
+	Mat DrawHistogram(Mat& hist);
 
 	Mat BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshold, const FVector2D lThreshold);
 

@@ -154,6 +154,23 @@ void AInterpreter::ReadFrame()
 	//Mat perspectiveInv = getPerspectiveTransform(InputArray(destPts), InputArray(srcPts));
 
 
+	Mat bgr_planes[3];
+	//split(finalImage, bgr_planes);
+	/*
+	int histSize = 256;
+	float range[] = { 0, 256 }; //the upper boundary is exclusive
+	const float* histRange[] = { range };
+	bool uniform = true, accumulate = false;*/
+	//Mat hist;
+	//calcHist(&bgr_planes[0], 1, 0, Mat(), hist, 1, &histSize, histRange, uniform, accumulate);
+	
+
+	//Mat img = DrawHistogram(hist);
+
+
+
+
+
 	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	const int32 dataSize = 512 * 128 *4* sizeof(uint8);
 	FMemory::Memcpy(textureData, finalImage.data, dataSize);
@@ -188,6 +205,25 @@ void AInterpreter::GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB
 	outputL = channel[0];
 	outputA = channel[1];
 	outputB = channel[2];
+}
+
+Mat AInterpreter::DrawHistogram(Mat& hist)
+{
+	int hist_w = 512;
+	int hist_h = 128;
+	int histSize = 256;
+	int bin_w = cvRound((double)hist_w / histSize);
+
+	Mat histImage(hist_h,hist_w,CV_8UC4,Scalar(0,0,0));
+	normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+	for (int i = 1; i < histSize; i++) {
+		cv::line(
+			histImage,
+			cv::Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
+			cv::Point(bin_w * (i), hist_h - cvRound(hist.at<float>(i))),
+			cv::Scalar(255, 255, 255, 255), 2, 8, 0);
+	}
+	return histImage;
 }
 
 Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshold, const FVector2D lThreshold)
