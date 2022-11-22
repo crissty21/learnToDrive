@@ -101,7 +101,10 @@ void AVehiclePawn::KeepRoad()
 	FVector coordOnSpline = Road->SplineComp->FindLocationClosestToWorldLocation(advancePointCoordinates,ESplineCoordinateSpace::World);
 	coordOnSpline.Z = advancePointCoordinates.Z;
 
-	DrawDebugLine(GetWorld(), frontPointCoordinates, coordOnSpline, FColor::Red, false, -1,0,10);
+	if (DrawLine)
+	{
+		DrawDebugLine(GetWorld(), frontPointCoordinates, coordOnSpline, FColor::Red, false, -1,0,10);
+	}
 
 	FVector L = frontPointCoordinates - backPointCoordinates;
 	FVector ld = coordOnSpline - backPointCoordinates;

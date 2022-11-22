@@ -61,6 +61,8 @@ protected:
 		float CriticalAngle = 0.5;
 	UPROPERTY(EditDefaultsOnly)
 		float MaxSpeed = 100;
+	UPROPERTY(EditDefaultsOnly)
+		bool DrawLine = false;
 private:
 	float PrevSpeedError = 30.f;
 

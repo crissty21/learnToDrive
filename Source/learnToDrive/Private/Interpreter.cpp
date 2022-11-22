@@ -168,7 +168,7 @@ void AInterpreter::ReadFrame()
 
 
 	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-	const int32 dataSize = 512 * 128 *4* sizeof(uint8);
+	const uint32 dataSize = 512 * 128 *4* sizeof(uint8);
 	FMemory::Memcpy(textureData, finalImage.data, dataSize);
 
 	Texture2->PlatformData->Mips[0].BulkData.Unlock();
@@ -183,14 +183,14 @@ void AInterpreter::ReadFrame()
 
 Mat AInterpreter::DrawHistogram(Mat& hist)
 {
-	int hist_w = 512;
-	int hist_h = 128;
-	int histSize = 256;
-	int bin_w = cvRound((double)hist_w / histSize);
+	uint16 hist_w = 512;
+	uint16 hist_h = 128;
+	uint16 histSize = 256;
+	uint16 bin_w = cvRound((double)hist_w / histSize);
 
 	Mat histImage(hist_h,hist_w,CV_8UC4,Scalar(0,0,0));
 	//normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
-	for (int i = 1; i < hist_w; i++)
+	for (int16 i = 1; i < hist_w; i++)
 	{
 		
 		cv::line(
@@ -232,9 +232,9 @@ Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshol
 	Mat outL, outA, outB;
 	GetLAB(inputRGB, outL, outA, outB);
 	
-	for (int i = 0; i < inputRGB.cols; i++)
+	for (int16 i = 0; i < inputRGB.cols; i++)
 	{
-		for (int j = 0; j < inputRGB.rows; j++)
+		for (int16 j = 0; j < inputRGB.rows; j++)
 		{
 			binaryImage.at<uint8>(j, i) = ((uint8)(LUTb[outB.at<uint8>(j, i)] == 1 && LUTl[outL.at<uint8>(j, i)] == 1 && LUTa[outA.at<uint8>(j, i)] == 1));
 		}
@@ -250,9 +250,9 @@ cv::Mat AInterpreter::GradientThreshold(Mat input, int channel, const FVector2D 
 	blur(input, input, Size(KSizeForBlur.X,KSizeForBlur.Y));
 	Sobel(input, sobel, CV_8U, 1, 0);
 	
-	for (int i = 0; i < input.cols; i++)
+	for (uint16 i = 0; i < input.cols; i++)
 	{
-		for (int j = 0; j < input.rows; j++)
+		for (uint16 j = 0; j < input.rows; j++)
 		{
 			uint8& pixel = binaryImage.at<uint8>(j, i) = ((uint8)(sobel.at<int8>(j, i) > threshold[0] && sobel.at<uint8>(j, i) < threshold[1]));
 		}
@@ -262,7 +262,7 @@ cv::Mat AInterpreter::GradientThreshold(Mat input, int channel, const FVector2D 
 
 void AInterpreter::CreateLUT(uint8* LUT, FVector2D Threshold)
 {
-	for (int i = 0; i < 256; i++)
+	for (uint16 i = 0; i < 256; i++)
 	{
 		if (i >= Threshold[0] && i <= Threshold[1])
 		{
