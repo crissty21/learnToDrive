@@ -153,21 +153,17 @@ void AInterpreter::ReadFrame()
 	
 	//Mat perspectiveInv = getPerspectiveTransform(InputArray(destPts), InputArray(srcPts));
 
-
-	Mat bgr_planes[3];
-	//split(finalImage, bgr_planes);
-	/*
-	int histSize = 256;
-	float range[] = { 0, 256 }; //the upper boundary is exclusive
-	const float* histRange[] = { range };
-	bool uniform = true, accumulate = false;*/
-	//Mat hist;
-	//calcHist(&bgr_planes[0], 1, 0, Mat(), hist, 1, &histSize, histRange, uniform, accumulate);
 	
+	Mat hist;
+	Mat channel[4];
+	split(finalImage, channel);
+	reduce(channel[0], hist, 0, REDUCE_SUM, CV_32SC1);
 
-	//Mat img = DrawHistogram(hist);
-
-
+	if (ShowHistogram)
+	{
+		Mat img = DrawHistogram(hist);
+		colorData = img;
+	}
 
 
 
@@ -185,6 +181,27 @@ void AInterpreter::ReadFrame()
 	Texture3->UpdateResource();
 }
 
+Mat AInterpreter::DrawHistogram(Mat& hist)
+{
+	int hist_w = 512;
+	int hist_h = 128;
+	int histSize = 256;
+	int bin_w = cvRound((double)hist_w / histSize);
+
+	Mat histImage(hist_h,hist_w,CV_8UC4,Scalar(0,0,0));
+	//normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+	for (int i = 1; i < hist_w; i++)
+	{
+		
+		cv::line(
+			histImage,
+			cv::Point((i - 1), hist_h - hist.at<int32>(i - 1) /histSize),
+			cv::Point(i, hist_h - hist.at<int32>(i) /histSize),
+			cv::Scalar(255, 255, 255, 255),2);
+
+	}
+	return histImage;
+}
 void AInterpreter::GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS)
 {
 	Mat Output; 
@@ -207,24 +224,6 @@ void AInterpreter::GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB
 	outputB = channel[2];
 }
 
-Mat AInterpreter::DrawHistogram(Mat& hist)
-{
-	int hist_w = 512;
-	int hist_h = 128;
-	int histSize = 256;
-	int bin_w = cvRound((double)hist_w / histSize);
-
-	Mat histImage(hist_h,hist_w,CV_8UC4,Scalar(0,0,0));
-	normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
-	for (int i = 1; i < histSize; i++) {
-		cv::line(
-			histImage,
-			cv::Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
-			cv::Point(bin_w * (i), hist_h - cvRound(hist.at<float>(i))),
-			cv::Scalar(255, 255, 255, 255), 2, 8, 0);
-	}
-	return histImage;
-}
 
 Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshold, const FVector2D lThreshold)
 {

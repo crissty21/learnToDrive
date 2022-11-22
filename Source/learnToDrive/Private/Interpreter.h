@@ -125,6 +125,9 @@ public:
 	Point2f destPts[4];
 
 
+	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
+		bool ShowHistogram = true;
+
 
 public:
 	//functions
