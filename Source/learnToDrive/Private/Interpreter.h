@@ -73,6 +73,15 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
 		FVector2D KSizeForBlur = FVector2D(6, 6);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
+		bool SobelThreshold = true;
+	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
+		bool LabThreshold = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
+		bool DrawEdgesInRed = true;
+
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Create Binary Image")
 		FVector2D SChannelThresh = FVector2D(80, 255);
@@ -93,6 +102,26 @@ public:
 	uint8 LUTl[256];
 	uint8 LUTs[256];
 	uint8 LUTa[256];
+
+	UPROPERTY(EditDefaultsOnly, Category = "Perspective Wrap")
+		uint32 Offset = 50;
+	UPROPERTY(EditDefaultsOnly, Category = "Perspective Wrap")
+		TArray<FVector2D> SourcePoints = { FVector2D(205,55),  //top left
+										   FVector2D(0,128), //bottom left
+										   FVector2D(512,128), //bottom right
+										   FVector2D(307,55)   //top right
+		};
+
+	UPROPERTY(EditDefaultsOnly, Category = "Perspective Wrap")
+		bool DrawPerspectiveLines = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Perspective Wrap")
+		bool PerspectiveWarpRaw = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Perspective Wrap")
+		bool PerspectiveWarpBinary = true;
+	Point2f srcPts[4];
+	Point2f destPts[4];
 
 public:
 	//functions

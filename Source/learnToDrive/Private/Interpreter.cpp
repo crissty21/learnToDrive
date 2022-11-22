@@ -29,6 +29,16 @@ void AInterpreter::BeginPlay()
 	CreateLUT(LUTs, SChannelThresh);
 	CreateLUT(LUTl, LChannelThresh);
 	CreateLUT(LUTa, AChannelThresh);
+
+	srcPts[0] = Point2f(SourcePoints[0].X, SourcePoints[0].Y);
+	srcPts[1] = Point2f(SourcePoints[1].X, SourcePoints[1].Y);
+	srcPts[2] = Point2f(SourcePoints[2].X, SourcePoints[2].Y);
+	srcPts[3] = Point2f(SourcePoints[3].X, SourcePoints[3].Y);
+
+	destPts[0] = Point2f(Offset, 0);
+	destPts[1] = Point2f(Offset, VideoSize.Y);
+	destPts[2] = Point2f(VideoSize.X - Offset, VideoSize.Y);
+	destPts[3] = Point2f(VideoSize.X - Offset, 0);
 }
 
 // Called every frame
@@ -74,29 +84,52 @@ void AInterpreter::ReadFrame()
 
 	Mat colorData = Mat(Size(512,128), CV_8UC4, ColorData.GetData());
 
+	Mat perspective;
+	if (PerspectiveWarpBinary || PerspectiveWarpRaw)
+	{
+		perspective = getPerspectiveTransform(srcPts, destPts);
+		if (PerspectiveWarpBinary)
+		{
+			warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
+		}
+	}
+
 	Mat sBinary = BinaryThresholdLAB_LUV(colorData, BChannelThresh, LChannelThresh);
 	Mat h, l, s;
 	GetHLS(colorData, h, l, s);
 	Mat sxBinary = GradientThreshold(s, 2, GradientThresh);
 	
 	Mat finalImage = Mat(Size(512, 128), CV_8UC4);
-	
 	for (int i = 0; i < finalImage.cols; i++)
 	{
 		for (int j = 0; j < finalImage.rows; j++)
 		{
-			uint8 result = ((uint8)(
-				sBinary.at<uint8>(j, i)
-				||
-				sxBinary.at<uint8>(j, i)
-				));
+			uint8 result;
+			if (LabThreshold)
+			{
+				if (SobelThreshold)
+				{
+					result = ((uint8)(sBinary.at<uint8>(j, i)||sxBinary.at<uint8>(j, i)));
+				}
+				else
+				{
+					result = sBinary.at<uint8>(j, i);
+				}
+			}
+			else
+			{
+				if (SobelThreshold)
+				{
+					result = sxBinary.at<uint8>(j, i);
+				}
+			}
 
 			finalImage.at<Vec<uint8, 4>>(j, i)[0] = result * 255;
 			finalImage.at<Vec<uint8, 4>>(j, i)[1] = result * 255;
 			finalImage.at<Vec<uint8, 4>>(j, i)[2] = result * 255;
 			finalImage.at<Vec<uint8, 4>>(j, i)[3] = 255;
 
-			if (result == 1)
+			if (result == 1 && DrawEdgesInRed)
 			{
 				colorData.at<Vec<uint8, 4>>(j, i)[0] = 10;
 				colorData.at<Vec<uint8, 4>>(j, i)[1] = 10;
@@ -105,6 +138,22 @@ void AInterpreter::ReadFrame()
 
 		}
 	}
+	
+	if (DrawPerspectiveLines)
+	{
+		line(colorData, Point(srcPts[0]), Point(srcPts[1]), Scalar(255, 0, 0, 255), 2);
+		line(colorData, Point(srcPts[1]), Point(srcPts[2]), Scalar(255, 0, 0, 255), 2);
+		line(colorData, Point(srcPts[2]), Point(srcPts[3]), Scalar(255, 0, 0, 255), 2);
+		line(colorData, Point(srcPts[3]), Point(srcPts[0]), Scalar(255, 0, 0, 255), 2);
+	}	
+	if (PerspectiveWarpRaw && !PerspectiveWarpBinary)
+	{
+		warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
+	}
+	
+	//Mat perspectiveInv = getPerspectiveTransform(InputArray(destPts), InputArray(srcPts));
+
+
 	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	const int32 dataSize = 512 * 128 *4* sizeof(uint8);
 	FMemory::Memcpy(textureData, finalImage.data, dataSize);
