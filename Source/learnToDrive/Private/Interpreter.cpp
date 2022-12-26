@@ -1,10 +1,15 @@
+
 #include "Interpreter.h"
+#include "ImageProcessor.h"
 
 AInterpreter::AInterpreter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	VideoSize = FVector2D(512, 128);
 	RefreshRate = 30.0f;
+
+	ImageProcesingUnit = CreateDefaultSubobject<UImageProcessor>("Image Procesor");
+
 }
 
 // Called when the game starts or when spawned

@@ -138,6 +138,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Histogram")
 		bool UseBetterMethod = false;
 
+	UPROPERTY(EditAnywhere)
+		class UImageProcessor* ImageProcesingUnit = nullptr;
 
 
 public:
