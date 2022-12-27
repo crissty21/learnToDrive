@@ -4,18 +4,42 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
+#include "PreOpenCVHeaders.h"
+#include "OpenCVHelper.h"
+
+#include <ThirdParty/OpenCV/include/opencv2/imgproc.hpp>
+#include <ThirdParty/OpenCV/include/opencv2/highgui/highgui.hpp>
+
+#include <ThirdParty/OpenCV/include/opencv2/core.hpp>
+#include "PostOpenCVHeaders.h"
+
 #include "ImageProcessor.generated.h"
+
 
 USTRUCT(BlueprintType)
 struct FChanelThreshold
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
+		UPROPERTY(EditAnywhere)
 		FVector2D Threshold = FVector2D(0);
 	UPROPERTY(EditAnywhere)
 		bool UseThreshold = false;
 	UPROPERTY()
-		TArray<int8> LookupTable;
+		uint8 LookupTable[256];
+};
+
+USTRUCT(BlueprintType)
+struct FSpaceTheshold
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+		FChanelThreshold ThresholdFirstChanel;
+	UPROPERTY(EditAnywhere)
+		FChanelThreshold ThresholdSecondChanel;
+	UPROPERTY(EditAnywhere)
+		FChanelThreshold ThresholdThirdChanel;
 };
 
 USTRUCT(BlueprintType)
@@ -24,24 +48,15 @@ struct FThresholds
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdSobelFirstChanel;
+		FSpaceTheshold SobelThresholds;
 	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdSobelSecondChanel;
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdSobelThirdChanel;
+		FSpaceTheshold BinaryThresholds;
 
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdBinaryFirstChanel;
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdBinarySecondChanel;
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdBinaryThirdChanel;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UImageProcessor : public UActorComponent
 {
-
 	GENERATED_BODY()
 
 public:	
@@ -59,22 +74,19 @@ public:
 		FThresholds HLS_Thresholds;
 	UPROPERTY(EditAnywhere)
 		FThresholds LAB_Thresholds;
+	
+	cv::Mat ConvertImage(cv::Mat inputImage, int code);
 
-	/*
-	Mat ConvertImage(Mat inputImage, int code);
+	void BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& SecondChanel, OUT cv::Mat& ThirdChanel);
 
-	void BreakImage(Mat inputImage, OUT Mat& firstChanel, OUT Mat& SecondChanel, OUT Mat& ThirdChanel);
-	/*
-	{
-		//breaks the hls color space in its specific components 
-		Mat Output;
-		
-		cvtColor(inputRGB, Output, cv::COLOR_BGR2HLS);
-		Mat channel[3];
-		split(Output, channel);
-		outputH = channel[0];
-		outputL = channel[1];
-		outputS = channel[2];
-	}
-	*/
+	void CreateLUT(uint8* LUT, FVector2D Threshold);
+
+	void GenerateLookUpTables();
+
+	void SaveData();
+	void LoadData();
+	void LoadSettingsClear();
+
+private:
+	TArray<FChanelThreshold*> refToLookUpTables;
 };

@@ -169,4 +169,6 @@ public:
 
 	void GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax);
 
+	void Save();
+	void Load();
 };

@@ -1,5 +1,6 @@
 
 #include "Interpreter.h"
+//#include "Components/InputComponent.h"
 #include "ImageProcessor.h"
 
 AInterpreter::AInterpreter()
@@ -16,6 +17,17 @@ AInterpreter::AInterpreter()
 void AInterpreter::BeginPlay()
 {
 	Super::BeginPlay();
+	//create and bind input
+	InputComponent = NewObject<UInputComponent>(this);
+	InputComponent->RegisterComponent();
+	if (InputComponent)
+	{
+		// Bind inputs here
+		InputComponent->BindAction("Save", IE_Pressed, this, &AInterpreter::Save);
+		InputComponent->BindAction("Load", IE_Pressed, this, &AInterpreter::Load);
+		EnableInput(GetWorld()->GetFirstPlayerController());
+	}
+
 
 	// Prepare the color data array
 	ColorData.AddDefaulted(VideoSize.X * VideoSize.Y);
@@ -79,7 +91,7 @@ void AInterpreter::Tick(float DeltaTime)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("renderTarget invalid"));
 	}
-
+	UE_LOG(LogTemp, Warning, TEXT("%i"), ImageProcesingUnit->RGB_Thresholds.BinaryThresholds.ThresholdFirstChanel.UseThreshold);
 }
 
 void AInterpreter::ReadFrame()
@@ -376,5 +388,16 @@ void AInterpreter::GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Poi
 		rightMax = maxLocal;
 	}
 	
+}
+
+void AInterpreter::Save()
+{
+	//dummy function 
+	ImageProcesingUnit->SaveData();
+}
+
+void AInterpreter::Load()
+{
+	ImageProcesingUnit->LoadData();
 }
 
