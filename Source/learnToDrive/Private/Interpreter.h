@@ -33,6 +33,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void CreateTextures();
+
+	void BindInput();
+
 
 public:	
 	// Called every frame
@@ -148,6 +152,13 @@ public:
 	// reads the current video frame
 	UFUNCTION(BlueprintCallable, Category = Data)
 		void ReadFrame();
+	UFUNCTION(BlueprintCallable, Category = Thresholds)
+		void GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold);
+	UFUNCTION(BlueprintCallable, Category = Thresholds)
+		void SetThresholds(int32 index, FVector2D threshold, bool useThreshold);
+
+
+
 
 	void CreateTextures(cv::Mat& finalImage, cv::Mat& colorData);
 

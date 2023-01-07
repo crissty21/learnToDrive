@@ -17,30 +17,12 @@ AInterpreter::AInterpreter()
 void AInterpreter::BeginPlay()
 {
 	Super::BeginPlay();
-	//create and bind input
-	InputComponent = NewObject<UInputComponent>(this);
-	InputComponent->RegisterComponent();
-	if (InputComponent)
-	{
-		// Bind inputs here
-		InputComponent->BindAction("Save", IE_Pressed, this, &AInterpreter::Save);
-		InputComponent->BindAction("Load", IE_Pressed, this, &AInterpreter::Load);
-		EnableInput(GetWorld()->GetFirstPlayerController());
-	}
+	BindInput();
+	CreateTextures();
 
-
-	// Prepare the color data array
 	ColorData.AddDefaulted(VideoSize.X * VideoSize.Y);
-	//create texture from texture render ref
-	if (TextureRenderRef)
-	{
-		Texture1 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image Raw"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
-		Texture2 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image Edges"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
-		Texture3 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image combo"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
-	}
 	flipflop = true;
 	RefreshTimer = 0.f;
-	// setup openCV 
 
 	CreateLUT(LUTb, BChannelThresh);
 	CreateLUT(LUTs, SChannelThresh);
@@ -58,6 +40,28 @@ void AInterpreter::BeginPlay()
 	destPts[3] = Point2f(VideoSize.X - Offset, 0);
 }
 
+void AInterpreter::CreateTextures()
+{
+	if (TextureRenderRef)
+	{
+		Texture1 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image Raw"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+		Texture2 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image Edges"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+		Texture3 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image combo"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
+	}
+}
+
+void AInterpreter::BindInput()
+{
+	InputComponent = NewObject<UInputComponent>(this);
+	InputComponent->RegisterComponent();
+	if (InputComponent)
+	{
+		InputComponent->BindAction("Save", IE_Pressed, this, &AInterpreter::Save);
+		InputComponent->BindAction("Load", IE_Pressed, this, &AInterpreter::Load);
+		EnableInput(GetWorld()->GetFirstPlayerController());
+	}
+}
+
 // Called every frame
 void AInterpreter::Tick(float DeltaTime)
 {
@@ -73,7 +77,7 @@ void AInterpreter::Tick(float DeltaTime)
 		{
 			if (RefreshTimer >= 1.0f / RefreshRate) 
 			{
-				TextureRenderRef->UpdateTexture2D(Texture1, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
+				//TextureRenderRef->UpdateTexture2D(Texture1, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
 				ReadFrame();
 				if (Texture1->PlatformData->Mips[0].BulkData.IsLocked() == false)
 				{
@@ -91,7 +95,6 @@ void AInterpreter::Tick(float DeltaTime)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("renderTarget invalid"));
 	}
-	UE_LOG(LogTemp, Warning, TEXT("%i"), ImageProcesingUnit->RGB_Thresholds.BinaryThresholds.ThresholdFirstChanel.UseThreshold);
 }
 
 void AInterpreter::ReadFrame()
@@ -166,7 +169,6 @@ void AInterpreter::ReadFrame()
 		warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
 	}
 	
-	//Mat perspectiveInv = getPerspectiveTransform(InputArray(destPts), InputArray(srcPts));
 
 	
 	Mat hist;
@@ -198,6 +200,22 @@ void AInterpreter::ReadFrame()
 	}
 
 	CreateTextures(finalImage, colorData);
+}
+
+void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)
+{
+	if (ImageProcesingUnit)
+	{
+		ImageProcesingUnit->GetThresholds(index, threshold, useThreshold);
+	}
+}
+
+void AInterpreter::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
+{
+	if (ImageProcesingUnit)
+	{
+		ImageProcesingUnit->SetThresholds(index, threshold, useThreshold);
+	}
 }
 
 void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)

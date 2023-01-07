@@ -21,7 +21,8 @@ USTRUCT(BlueprintType)
 struct FChanelThreshold
 {
 	GENERATED_BODY()
-		UPROPERTY(EditAnywhere)
+	
+	UPROPERTY(EditAnywhere)
 		FVector2D Threshold = FVector2D(0);
 	UPROPERTY(EditAnywhere)
 		bool UseThreshold = false;
@@ -87,6 +88,12 @@ public:
 	void LoadData();
 	void LoadSettingsClear();
 
+	UFUNCTION()
+		void GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold);
+	UFUNCTION()
+		void SetThresholds(int32 index, FVector2D threshold, bool useThreshold);
+
+
 private:
-	TArray<FChanelThreshold*> refToLookUpTables;
+	TArray<FChanelThreshold> refToLookUpTables;
 };

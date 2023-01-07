@@ -11,24 +11,6 @@ UImageProcessor::UImageProcessor()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	refToLookUpTables.Add(&RGB_Thresholds.BinaryThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(&RGB_Thresholds.BinaryThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(&RGB_Thresholds.BinaryThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(&RGB_Thresholds.SobelThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(&RGB_Thresholds.SobelThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(&RGB_Thresholds.SobelThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(&LAB_Thresholds.BinaryThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(&LAB_Thresholds.BinaryThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(&LAB_Thresholds.BinaryThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(&LAB_Thresholds.SobelThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(&LAB_Thresholds.SobelThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(&LAB_Thresholds.SobelThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(&HLS_Thresholds.BinaryThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(&HLS_Thresholds.BinaryThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(&HLS_Thresholds.BinaryThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(&HLS_Thresholds.SobelThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(&HLS_Thresholds.SobelThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(&HLS_Thresholds.SobelThresholds.ThresholdThirdChanel);
 	//LoadSettingsClear();
 }
 
@@ -37,8 +19,26 @@ UImageProcessor::UImageProcessor()
 void UImageProcessor::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("Da"));
 	//create LUTs
+	refToLookUpTables.Add(RGB_Thresholds.BinaryThresholds.ThresholdFirstChanel);
+	refToLookUpTables.Add(RGB_Thresholds.BinaryThresholds.ThresholdSecondChanel);
+	refToLookUpTables.Add(RGB_Thresholds.BinaryThresholds.ThresholdThirdChanel);
+	refToLookUpTables.Add(RGB_Thresholds.SobelThresholds.ThresholdFirstChanel);
+	refToLookUpTables.Add(RGB_Thresholds.SobelThresholds.ThresholdSecondChanel);
+	refToLookUpTables.Add(RGB_Thresholds.SobelThresholds.ThresholdThirdChanel);
+	refToLookUpTables.Add(LAB_Thresholds.BinaryThresholds.ThresholdFirstChanel);
+	refToLookUpTables.Add(LAB_Thresholds.BinaryThresholds.ThresholdSecondChanel);
+	refToLookUpTables.Add(LAB_Thresholds.BinaryThresholds.ThresholdThirdChanel);
+	refToLookUpTables.Add(LAB_Thresholds.SobelThresholds.ThresholdFirstChanel);
+	refToLookUpTables.Add(LAB_Thresholds.SobelThresholds.ThresholdSecondChanel);
+	refToLookUpTables.Add(LAB_Thresholds.SobelThresholds.ThresholdThirdChanel);
+	refToLookUpTables.Add(HLS_Thresholds.BinaryThresholds.ThresholdFirstChanel);
+	refToLookUpTables.Add(HLS_Thresholds.BinaryThresholds.ThresholdSecondChanel);
+	refToLookUpTables.Add(HLS_Thresholds.BinaryThresholds.ThresholdThirdChanel);
+	refToLookUpTables.Add(HLS_Thresholds.SobelThresholds.ThresholdFirstChanel);
+	refToLookUpTables.Add(HLS_Thresholds.SobelThresholds.ThresholdSecondChanel);
+	refToLookUpTables.Add(HLS_Thresholds.SobelThresholds.ThresholdThirdChanel);
+	LoadSettingsClear();
 	GenerateLookUpTables();
 }
 
@@ -75,11 +75,11 @@ void UImageProcessor::CreateLUT(uint8* LUT, FVector2D Threshold)
 
 void UImageProcessor::GenerateLookUpTables()
 {
-	for(FChanelThreshold* iter : refToLookUpTables)
+	for(FChanelThreshold iter : refToLookUpTables)
 	{
-		if (iter->UseThreshold)
+		if (iter.UseThreshold)
 		{
-			CreateLUT(iter->LookupTable, iter->Threshold);
+			CreateLUT(iter.LookupTable, iter.Threshold);
 		}
 	}
 }
@@ -89,9 +89,9 @@ void UImageProcessor::SaveData()
 	UE_LOG(LogTemp, Warning, TEXT("Saved"));
 	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::CreateSaveGameObject(USaver::StaticClass()));
 	//add data to be saved 
-	for (FChanelThreshold* iter : refToLookUpTables)
+	for (FChanelThreshold iter : refToLookUpTables)
 	{
-		SaveGameInstance->addToSaveData(iter->Threshold, iter->UseThreshold);
+		SaveGameInstance->addToSaveData(iter.Threshold, iter.UseThreshold);
 	}
 
 	//save data to slot
@@ -109,10 +109,10 @@ void UImageProcessor::LoadData()
 		UE_LOG(LogTemp, Warning, TEXT("no save found"));
 		return;
 	}
-	for (FChanelThreshold* iter : refToLookUpTables)
+	for (FChanelThreshold& iter : refToLookUpTables)
 	{		
-		iter->Threshold = SaveGameInstance->ThresholdsToBeSaved[index].Threshold;
-		iter->UseThreshold = SaveGameInstance->ThresholdsToBeSaved[index].UseThreshold;
+		iter.Threshold = SaveGameInstance->ThresholdsToBeSaved[index].Threshold;	
+		iter.UseThreshold = SaveGameInstance->ThresholdsToBeSaved[index].UseThreshold;
 		index++;
 	}
 }
@@ -126,10 +126,28 @@ void UImageProcessor::LoadSettingsClear()
 		return;
 	}
 	int8 index = 0;
-	for (FChanelThreshold* iter : refToLookUpTables)
+	for (FChanelThreshold& iter : refToLookUpTables)
 	{
-		iter->Threshold = SaveGameInstance->ThresholdsToBeSaved[index].Threshold;
-		iter->UseThreshold = SaveGameInstance->ThresholdsToBeSaved[index].UseThreshold;
+		iter.Threshold = SaveGameInstance->ThresholdsToBeSaved[index].Threshold;
+		iter.UseThreshold = SaveGameInstance->ThresholdsToBeSaved[index].UseThreshold;
 		index++;
+	}
+}
+
+void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
+{
+	if (refToLookUpTables.IsValidIndex(index))
+	{
+		refToLookUpTables[index].Threshold = threshold;
+		refToLookUpTables[index].UseThreshold = useThreshold;
+	}
+}
+
+void UImageProcessor::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)
+{
+	if (refToLookUpTables.IsValidIndex(index))
+	{
+		threshold = refToLookUpTables[index].Threshold;
+		useThreshold = refToLookUpTables[index].UseThreshold;
 	}
 }
