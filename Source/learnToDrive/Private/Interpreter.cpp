@@ -39,7 +39,7 @@ void AInterpreter::BeginPlay()
 	destPts[2] = Point2f(VideoSize.X - Offset, VideoSize.Y);
 	destPts[3] = Point2f(VideoSize.X - Offset, 0);
 }
-
+//stay
 void AInterpreter::CreateTextures()
 {
 	if (TextureRenderRef)
@@ -49,7 +49,7 @@ void AInterpreter::CreateTextures()
 		Texture3 = TextureRenderRef->ConstructTexture2D(this, TEXT("Camera Image combo"), EObjectFlags::RF_NoFlags, CTF_DeferCompression);
 	}
 }
-
+//stay
 void AInterpreter::BindInput()
 {
 	InputComponent = NewObject<UInputComponent>(this);
@@ -62,7 +62,7 @@ void AInterpreter::BindInput()
 	}
 }
 
-// Called every frame
+//Stay
 void AInterpreter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -201,7 +201,7 @@ void AInterpreter::ReadFrame()
 
 	CreateTextures(finalImage, colorData);
 }
-
+//stay
 void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)
 {
 	if (ImageProcesingUnit)
@@ -209,7 +209,7 @@ void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThr
 		ImageProcesingUnit->GetThresholds(index, threshold, useThreshold);
 	}
 }
-
+//stay
 void AInterpreter::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
 {
 	if (ImageProcesingUnit)
@@ -217,7 +217,7 @@ void AInterpreter::SetThresholds(int32 index, FVector2D threshold, bool useThres
 		ImageProcesingUnit->SetThresholds(index, threshold, useThreshold);
 	}
 }
-
+//stay
 void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 {
 	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
@@ -233,7 +233,7 @@ void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 	Texture3->PlatformData->Mips[0].BulkData.Unlock();
 	Texture3->UpdateResource();
 }
-
+//stay for now
 void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
 {
 	line(colorData, Point(srcPts[0]), Point(srcPts[1]), Scalar(255, 0, 0, 255), 2);
@@ -241,7 +241,7 @@ void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
 	line(colorData, Point(srcPts[2]), Point(srcPts[3]), Scalar(255, 0, 0, 255), 2);
 	line(colorData, Point(srcPts[3]), Point(srcPts[0]), Scalar(255, 0, 0, 255), 2);
 }
-
+//not yet
 Mat AInterpreter::DrawHistogram(Mat& hist)
 {
 	uint16 hist_w = 512;
@@ -274,6 +274,7 @@ Mat AInterpreter::DrawHistogram(Mat& hist)
 
 	return histImage;
 }
+//moved
 void AInterpreter::GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS)
 {
 	Mat Output; 
@@ -284,7 +285,7 @@ void AInterpreter::GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS
 	outputL = channel[1];
 	outputS = channel[2];
 }
-
+//moved
 void AInterpreter::GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB)
 {
 	Mat Output;
@@ -296,7 +297,7 @@ void AInterpreter::GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB
 	outputB = channel[2];
 }
 
-
+//binary threshold 
 Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshold, const FVector2D lThreshold)
 {
 	//creates binary mask 
@@ -313,7 +314,7 @@ Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshol
 	}
 	return binaryImage;
 }
-
+//sobel threshold to be moved and rewrited 
 cv::Mat AInterpreter::GradientThreshold(Mat input, int channel, const FVector2D threshold)
 {
 	Mat binaryImage = Mat(input.size(), CV_8UC1);
@@ -326,12 +327,14 @@ cv::Mat AInterpreter::GradientThreshold(Mat input, int channel, const FVector2D 
 	{
 		for (uint16 j = 0; j < input.rows; j++)
 		{
-			uint8& pixel = binaryImage.at<uint8>(j, i) = ((uint8)(sobel.at<int8>(j, i) > threshold[0] && sobel.at<uint8>(j, i) < threshold[1]));
+			binaryImage.at<uint8>(j, i) = ((uint8)(sobel.at<int8>(j, i) > threshold[0] && sobel.at<uint8>(j, i) < threshold[1]));
 		}
 	}
 	return binaryImage;
 }
 
+
+//moved
 void AInterpreter::CreateLUT(uint8* LUT, FVector2D Threshold)
 {
 	for (uint16 i = 0; i < 256; i++)
@@ -346,7 +349,7 @@ void AInterpreter::CreateLUT(uint8* LUT, FVector2D Threshold)
 		}
 	}
 }
-
+//not yet
 void AInterpreter::GetHistogramPeaksFirstMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)
 {
 	leftMax.y = rightMax.y = 0;
@@ -367,7 +370,7 @@ void AInterpreter::GetHistogramPeaksFirstMethod(Mat& hist, Point2i& leftMax, Poi
 		}
 	}
 }
-
+//not yet
 void AInterpreter::GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)
 {
 
@@ -407,13 +410,13 @@ void AInterpreter::GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Poi
 	}
 	
 }
-
+//stay
 void AInterpreter::Save()
 {
 	//dummy function 
 	ImageProcesingUnit->SaveData();
 }
-
+//stay
 void AInterpreter::Load()
 {
 	ImageProcesingUnit->LoadData();

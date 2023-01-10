@@ -30,7 +30,7 @@ cv::Mat UImageProcessor::ConvertImage(cv::Mat inputImage, int code)
 	return Output;
 }
 
-void BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& secondChanel, OUT cv::Mat& thirdChanel)
+void UImageProcessor::BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& secondChanel, OUT cv::Mat& thirdChanel)
 {
 	cv::Mat channel[3];
 	cv::split(inputImage, channel);
@@ -70,7 +70,7 @@ void UImageProcessor::SaveData()
 	UE_LOG(LogTemp, Warning, TEXT("Saved"));
 	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::CreateSaveGameObject(USaver::StaticClass()));
 	//add data to be saved 
-	for (FChanelThreshold iter : refToLookUpTables)
+	for (FChanelThreshold& iter : refToLookUpTables)
 	{
 		SaveGameInstance->addToSaveData(iter.Threshold, iter.UseThreshold);
 	}
@@ -120,6 +120,60 @@ void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useTh
 		refToLookUpTables[index].Threshold = threshold;
 		refToLookUpTables[index].UseThreshold = useThreshold;
 	}
+}
+
+bool UImageProcessor::checkUsageBinary(const int8* table)
+{
+	return refToLookUpTables[table[0]].UseThreshold && refToLookUpTables[table[1]].UseThreshold && refToLookUpTables[table[2]].UseThreshold;
+}
+bool UImageProcessor::checkUsageSobel(const int8* table)
+{
+	return refToLookUpTables[table[0]].UseThreshold && refToLookUpTables[table[1]].UseThreshold && refToLookUpTables[table[2]].UseThreshold;
+}
+cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
+{
+	cv::Mat finalImage;
+	//we check to see for each image type
+	if (checkUsageBinary(RGBs))
+	{
+		//do binary thresholds for rgb
+		//save the result in final image
+	}
+	if (checkUsageSobel(RGBs))
+	{
+		//do sobel thresholds for rgb
+		//save the result with OR in final image
+	}
+	if (checkUsageBinary(LABs) || checkUsageSobel(LABs))
+	{
+		cv::Mat	labImage = ConvertImage(image, cv::COLOR_BGR2Lab);
+		if (checkUsageBinary(LABs))
+		{
+			//do binary threshold for lab
+			//save result with OR in final image
+		}
+		if (checkUsageSobel(LABs))
+		{
+			//do sobel threshold for lab
+			//save result with OR in final image
+		}
+	}
+	if (checkUsageBinary(HLSs) || checkUsageSobel(HLSs))
+	{
+		cv::Mat	labImage = ConvertImage(image, cv::COLOR_BGR2HLS);
+		if (checkUsageBinary(HLSs))
+		{
+			//do binary threshold for hls
+			//save result with OR in final image
+		}
+		if (checkUsageSobel(HLSs))
+		{
+			//do sobel threshold for hls
+			//save result with OR in final image
+		}
+	}
+
+	return finalImage;
 }
 
 void UImageProcessor::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)

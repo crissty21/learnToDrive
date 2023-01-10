@@ -85,6 +85,13 @@ public:
 		void SetThresholds(int32 index, FVector2D threshold, bool useThreshold);
 
 
+	cv::Mat PrelucrateImage(cv::Mat);
 private:
+	bool checkUsageBinary(const int8* table);
+	bool checkUsageSobel(const int8* table);
 	TArray<FChanelThreshold> refToLookUpTables;
+
+	const int8 RGBs[6] = { 0,1,2,3,4,5 };
+	const int8 HLSs[6] = { 6,7,8,9,10,11};
+	const int8 LABs[6] = { 12,13,14,15,16,17};
 };
