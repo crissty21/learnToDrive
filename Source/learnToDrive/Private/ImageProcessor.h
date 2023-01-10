@@ -30,29 +30,26 @@ struct FChanelThreshold
 		uint8 LookupTable[256];
 };
 
-USTRUCT(BlueprintType)
-struct FSpaceTheshold
+enum EThresholds
 {
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdFirstChanel;
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdSecondChanel;
-	UPROPERTY(EditAnywhere)
-		FChanelThreshold ThresholdThirdChanel;
-};
-
-USTRUCT(BlueprintType)
-struct FThresholds
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-		FSpaceTheshold SobelThresholds;
-	UPROPERTY(EditAnywhere)
-		FSpaceTheshold BinaryThresholds;
-
+	R_RGB_Binary,
+	G_RGB_Binary,
+	B_RGB_Binary,
+	R_RGB_Sobel,
+	G_RGB_Sobel,
+	B_RGB_Sobel,
+	H_HLS_Binary,
+	L_HLS_Binary,
+	S_HLS_Binary,
+	H_HLS_Sobel,
+	L_HLS_Sobel,
+	S_HLS_Sobel,
+	L_LAB_Binary,
+	A_LAB_Binary,
+	B_LAB_Binary,
+	L_LAB_Sobel,
+	A_LAB_Sobel,
+	B_LAB_Sobel
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -69,12 +66,6 @@ protected:
 
 public:
 	
-	UPROPERTY(EditAnywhere)
-		FThresholds RGB_Thresholds;
-	UPROPERTY(EditAnywhere)
-		FThresholds HLS_Thresholds;
-	UPROPERTY(EditAnywhere)
-		FThresholds LAB_Thresholds;
 	
 	cv::Mat ConvertImage(cv::Mat inputImage, int code);
 

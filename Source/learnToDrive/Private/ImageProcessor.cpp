@@ -10,8 +10,6 @@
 UImageProcessor::UImageProcessor()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
-	//LoadSettingsClear();
 }
 
 
@@ -19,25 +17,8 @@ UImageProcessor::UImageProcessor()
 void UImageProcessor::BeginPlay()
 {
 	Super::BeginPlay();
+	refToLookUpTables.SetNum(18);
 	//create LUTs
-	refToLookUpTables.Add(RGB_Thresholds.BinaryThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(RGB_Thresholds.BinaryThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(RGB_Thresholds.BinaryThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(RGB_Thresholds.SobelThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(RGB_Thresholds.SobelThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(RGB_Thresholds.SobelThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(LAB_Thresholds.BinaryThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(LAB_Thresholds.BinaryThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(LAB_Thresholds.BinaryThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(LAB_Thresholds.SobelThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(LAB_Thresholds.SobelThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(LAB_Thresholds.SobelThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(HLS_Thresholds.BinaryThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(HLS_Thresholds.BinaryThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(HLS_Thresholds.BinaryThresholds.ThresholdThirdChanel);
-	refToLookUpTables.Add(HLS_Thresholds.SobelThresholds.ThresholdFirstChanel);
-	refToLookUpTables.Add(HLS_Thresholds.SobelThresholds.ThresholdSecondChanel);
-	refToLookUpTables.Add(HLS_Thresholds.SobelThresholds.ThresholdThirdChanel);
 	LoadSettingsClear();
 	GenerateLookUpTables();
 }
@@ -101,8 +82,7 @@ void UImageProcessor::SaveData()
 void UImageProcessor::LoadData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Loaded"));
-	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::CreateSaveGameObject(USaver::StaticClass()));
-	SaveGameInstance = Cast<USaver>(UGameplayStatics::LoadGameFromSlot("Thresholds",0));
+	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::LoadGameFromSlot("Thresholds",0));
 	int8 index = 0;
 	if (SaveGameInstance == nullptr)
 	{
@@ -119,8 +99,7 @@ void UImageProcessor::LoadData()
 
 void UImageProcessor::LoadSettingsClear()
 {
-	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::CreateSaveGameObject(USaver::StaticClass()));
-	SaveGameInstance = Cast<USaver>(UGameplayStatics::LoadGameFromSlot("Thresholds", 0));
+	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::LoadGameFromSlot("Thresholds", 0));
 	if (SaveGameInstance == nullptr)
 	{
 		return;
