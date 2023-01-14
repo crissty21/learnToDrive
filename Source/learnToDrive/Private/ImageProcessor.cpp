@@ -56,7 +56,7 @@ void UImageProcessor::CreateLUT(uint8* LUT, FVector2D Threshold)
 
 void UImageProcessor::GenerateLookUpTables()
 {
-	for(FChanelThreshold iter : refToLookUpTables)
+	for(FChanelThreshold& iter : refToLookUpTables)
 	{
 		if (iter.UseThreshold)
 		{
@@ -124,20 +124,79 @@ void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useTh
 
 bool UImageProcessor::checkUsageBinary(const int8* table)
 {
-	return refToLookUpTables[table[0]].UseThreshold && refToLookUpTables[table[1]].UseThreshold && refToLookUpTables[table[2]].UseThreshold;
+	return refToLookUpTables[table[0]].UseThreshold || refToLookUpTables[table[1]].UseThreshold || refToLookUpTables[table[2]].UseThreshold;
 }
 bool UImageProcessor::checkUsageSobel(const int8* table)
 {
-	return refToLookUpTables[table[0]].UseThreshold && refToLookUpTables[table[1]].UseThreshold && refToLookUpTables[table[2]].UseThreshold;
+	return refToLookUpTables[table[0]].UseThreshold || refToLookUpTables[table[1]].UseThreshold || refToLookUpTables[table[2]].UseThreshold;
 }
+cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
+{
+	cv::Mat binaryImage = cv::Mat(input.size(), CV_8UC1);
+	UE_LOG(LogTemp, Warning, TEXT("%i"), (refToLookUpTables[threshold[0]].UseThreshold && refToLookUpTables[threshold[0]].UseThreshold && refToLookUpTables[threshold[0]].UseThreshold));
+	//HERE
+
+
+
+
+
+	//probabil nu sunt mapate cum trebuie variabilele
+
+
+
+
+
+
+	for (int16 i = 0; i < input.cols; i++)
+	{
+		for (int16 j = 0; j < input.rows; j++)
+		{
+
+			binaryImage.at<uint8>(j, i) = ((uint8)(
+				!refToLookUpTables[threshold[0]].UseThreshold || refToLookUpTables[threshold[0]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[0]] == 1 &&
+				!refToLookUpTables[threshold[1]].UseThreshold || refToLookUpTables[threshold[1]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[1]] == 1 &&
+				!refToLookUpTables[threshold[2]].UseThreshold || refToLookUpTables[threshold[2]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[2]] == 1
+				));
+		}
+	}
+	return binaryImage;
+}
+
+cv::Mat UImageProcessor::OrMats(const cv::Mat first, const cv::Mat second)
+{
+	cv::Mat binaryImage = cv::Mat(first.size(), CV_8UC1);
+
+	for (int16 i = 0; i < first.cols; i++)
+	{
+		for (int16 j = 0; j < first.rows; j++)
+		{
+			binaryImage.at<uint8>(j, i) = ((uint8)(
+				first.at<uint8>(j,i) == 1 || second.at<uint8>(j,i) == 1
+				));
+		}
+	}
+	return binaryImage;
+}
+
 cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 {
-	cv::Mat finalImage;
+	cv::Mat finalImage = cv::Mat(image.size(), CV_8UC1);
+	cv::Mat result;
+	bool added = false;
 	//we check to see for each image type
 	if (checkUsageBinary(RGBs))
 	{
-		//do binary thresholds for rgb
-		//save the result in final image
+		result = BinaryThreshold(image,RGBs);
+		if (added)
+		{
+			finalImage = OrMats(finalImage, result);
+		}
+		else
+		{
+			added = true;
+			finalImage = result;
+		}
+
 	}
 	if (checkUsageSobel(RGBs))
 	{
@@ -149,8 +208,17 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 		cv::Mat	labImage = ConvertImage(image, cv::COLOR_BGR2Lab);
 		if (checkUsageBinary(LABs))
 		{
-			//do binary threshold for lab
-			//save result with OR in final image
+			result = BinaryThreshold(image, LABs);
+			if (added)
+			{
+				finalImage = OrMats(finalImage, result);
+			}
+			else
+			{
+				added = true;
+				finalImage = result;
+			}
+
 		}
 		if (checkUsageSobel(LABs))
 		{
@@ -163,8 +231,17 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 		cv::Mat	labImage = ConvertImage(image, cv::COLOR_BGR2HLS);
 		if (checkUsageBinary(HLSs))
 		{
-			//do binary threshold for hls
-			//save result with OR in final image
+			result = BinaryThreshold(image, HLSs);
+			if (added)
+			{
+				finalImage = OrMats(finalImage, result);
+			}
+			else
+			{
+				added = true;
+				finalImage = result;
+			}
+
 		}
 		if (checkUsageSobel(HLSs))
 		{

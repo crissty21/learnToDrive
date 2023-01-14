@@ -89,6 +89,8 @@ public:
 private:
 	bool checkUsageBinary(const int8* table);
 	bool checkUsageSobel(const int8* table);
+	cv::Mat BinaryThreshold(cv::Mat input, const int8* threshold);
+	cv::Mat OrMats(const cv::Mat first, const cv::Mat second);
 	TArray<FChanelThreshold> refToLookUpTables;
 
 	const int8 RGBs[6] = { 0,1,2,3,4,5 };

@@ -113,8 +113,9 @@ void AInterpreter::ReadFrame()
 			warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
 		}
 	}
-
-	Mat sBinary = BinaryThresholdLAB_LUV(colorData, BChannelThresh, LChannelThresh);
+	Mat sBinary = 
+		ImageProcesingUnit->PrelucrateImage(colorData);
+	//BinaryThresholdLAB_LUV(colorData, BChannelThresh, LChannelThresh);
 
 	Mat h, l, s;
 	GetHLS(colorData, h, l, s);
