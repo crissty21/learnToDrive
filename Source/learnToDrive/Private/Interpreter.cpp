@@ -305,6 +305,7 @@ Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshol
 	Mat binaryImage = Mat(inputRGB.size(),CV_8UC1);
 	Mat outL, outA, outB;
 	GetLAB(inputRGB, outL, outA, outB);
+
 	
 	for (int16 i = 0; i < inputRGB.cols; i++)
 	{
@@ -313,6 +314,7 @@ Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshol
 			binaryImage.at<uint8>(j, i) = ((uint8)(LUTb[outB.at<uint8>(j, i)] == 1 && LUTl[outL.at<uint8>(j, i)] == 1 && LUTa[outA.at<uint8>(j, i)] == 1));
 		}
 	}
+				
 	return binaryImage;
 }
 //sobel threshold to be moved and rewrited 
@@ -349,6 +351,7 @@ void AInterpreter::CreateLUT(uint8* LUT, FVector2D Threshold)
 			LUT[i] = 0;
 		}
 	}
+
 }
 //not yet
 void AInterpreter::GetHistogramPeaksFirstMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)

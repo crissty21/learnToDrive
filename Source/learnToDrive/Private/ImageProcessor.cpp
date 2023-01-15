@@ -33,7 +33,8 @@ cv::Mat UImageProcessor::ConvertImage(cv::Mat inputImage, int code)
 void UImageProcessor::BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& secondChanel, OUT cv::Mat& thirdChanel)
 {
 	cv::Mat channel[3];
-	cv::split(inputImage, channel);
+	cv::Mat breakk = cv::Mat(inputImage);
+	cv::split(breakk, channel);
 	firstChanel = channel[0];
 	secondChanel = channel[1];
 	thirdChanel = channel[2];
@@ -51,6 +52,7 @@ void UImageProcessor::CreateLUT(uint8* LUT, FVector2D Threshold)
 		{
 			LUT[i] = 0;
 		}
+
 	}
 }
 
@@ -133,30 +135,31 @@ bool UImageProcessor::checkUsageSobel(const int8* table)
 cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 {
 	cv::Mat binaryImage = cv::Mat(input.size(), CV_8UC1);
-	UE_LOG(LogTemp, Warning, TEXT("%i"), (refToLookUpTables[threshold[0]].UseThreshold && refToLookUpTables[threshold[0]].UseThreshold && refToLookUpTables[threshold[0]].UseThreshold));
+
 	//HERE
 
 
-
-
-
-	//probabil nu sunt mapate cum trebuie variabilele
-
-
-
-
-
+	//probabil nu sunt mapate cum trebuie variabileleai 
 
 	for (int16 i = 0; i < input.cols; i++)
 	{
 		for (int16 j = 0; j < input.rows; j++)
 		{
+			bool pixel = true;
+			if (refToLookUpTables[threshold[0]].UseThreshold)
+			{
+				pixel = pixel && (refToLookUpTables[threshold[0]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[0]] == 1);
+			}
+			if (pixel && refToLookUpTables[threshold[1]].UseThreshold)
+			{
+				pixel = pixel && (refToLookUpTables[threshold[1]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[1]] == 1);
+			}
+			if (pixel && refToLookUpTables[threshold[2]].UseThreshold)
+			{
+				pixel = pixel && (refToLookUpTables[threshold[2]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[2]] == 1);
+			}
+			binaryImage.at<uint8>(j, i) = ((uint8)(pixel));
 
-			binaryImage.at<uint8>(j, i) = ((uint8)(
-				!refToLookUpTables[threshold[0]].UseThreshold || refToLookUpTables[threshold[0]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[0]] == 1 &&
-				!refToLookUpTables[threshold[1]].UseThreshold || refToLookUpTables[threshold[1]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[1]] == 1 &&
-				!refToLookUpTables[threshold[2]].UseThreshold || refToLookUpTables[threshold[2]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[2]] == 1
-				));
 		}
 	}
 	return binaryImage;
@@ -208,7 +211,7 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 		cv::Mat	labImage = ConvertImage(image, cv::COLOR_BGR2Lab);
 		if (checkUsageBinary(LABs))
 		{
-			result = BinaryThreshold(image, LABs);
+			result = BinaryThreshold(labImage, LABs);
 			if (added)
 			{
 				finalImage = OrMats(finalImage, result);
@@ -228,10 +231,10 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 	}
 	if (checkUsageBinary(HLSs) || checkUsageSobel(HLSs))
 	{
-		cv::Mat	labImage = ConvertImage(image, cv::COLOR_BGR2HLS);
+		cv::Mat	hlsImage = ConvertImage(image, cv::COLOR_BGR2HLS);
 		if (checkUsageBinary(HLSs))
 		{
-			result = BinaryThreshold(image, HLSs);
+			result = BinaryThreshold(hlsImage, HLSs);
 			if (added)
 			{
 				finalImage = OrMats(finalImage, result);
