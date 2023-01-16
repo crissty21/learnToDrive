@@ -132,6 +132,8 @@ void AVehiclePawn::KeepRoad()
 
 void AVehiclePawn::MoveForward(float value)
 {
+	if (ChaosWheeledVehicleComponent->GetHandbrakeInput())
+		return;
 	if (value >= 0)
 	{
 		ChaosWheeledVehicleComponent->SetThrottleInput(value);

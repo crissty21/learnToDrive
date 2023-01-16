@@ -120,20 +120,20 @@ cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 	{
 		for (int16 j = 0; j < input.rows; j++)
 		{
-			bool pixel = true;
+			bool pixel = false;
 			for (uint8 k = 0; k < channels; k++)
 			{
-				if (pixel)
+				if (!pixel)
 				{
 					if (refToLookUpTables[threshold[k]].UseThreshold)
 					{
 						if (channels == 3)
 						{
-							pixel = pixel && (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[k]] == 1);
+							pixel = pixel || (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[k]] == 1);
 						}
 						else if(channels == 4)
 						{
-							pixel = pixel && (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[k]] == 1);
+							pixel = pixel || (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[k]] == 1);
 
 						}
 						else
