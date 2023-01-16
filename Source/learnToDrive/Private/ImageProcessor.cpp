@@ -26,15 +26,6 @@ cv::Mat UImageProcessor::ConvertImage(cv::Mat inputImage, int code)
 	return Output;
 }
 
-void UImageProcessor::BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& secondChanel, OUT cv::Mat& thirdChanel)
-{
-	cv::Mat channel[3];
-	cv::split(inputImage, channel);
-	firstChanel = channel[0];
-	secondChanel = channel[1];
-	thirdChanel = channel[2];
-}
-
 void UImageProcessor::CreateLUT(uint8* LUT, FVector2D Threshold)
 {
 	for (uint16 i = 0; i < 256; i++)
@@ -110,14 +101,6 @@ void UImageProcessor::LoadSettingsClear()
 	}
 }
 
-void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
-{
-	if (refToLookUpTables.IsValidIndex(index))
-	{
-		refToLookUpTables[index].Threshold = threshold;
-		refToLookUpTables[index].UseThreshold = useThreshold;
-	}
-}
 
 bool UImageProcessor::checkUsageBinary(const int8* table)
 {
@@ -161,20 +144,6 @@ cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 				}
 				else break;
 			}
-			/*
-			if (refToLookUpTables[threshold[0]].UseThreshold)
-			{
-				pixel = pixel && (refToLookUpTables[threshold[0]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[0]] == 1);
-			}
-			if (pixel && refToLookUpTables[threshold[1]].UseThreshold)
-			{
-				pixel = pixel && (refToLookUpTables[threshold[1]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[1]] == 1);
-			}
-			if (pixel && refToLookUpTables[threshold[2]].UseThreshold)
-			{
-				pixel = pixel && (refToLookUpTables[threshold[2]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[2]] == 1);
-			}
-			*/
 			binaryImage.at<uint8>(j, i) = ((uint8)(pixel));
 
 		}
@@ -279,5 +248,18 @@ void UImageProcessor::GetThresholds(int32 index, FVector2D& threshold, bool& use
 	{
 		threshold = refToLookUpTables[index].Threshold;
 		useThreshold = refToLookUpTables[index].UseThreshold;
+	}
+}
+
+void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
+{
+	if (refToLookUpTables.IsValidIndex(index))
+	{
+		refToLookUpTables[index].Threshold = threshold;
+		refToLookUpTables[index].UseThreshold = useThreshold;
+		if (useThreshold)
+		{
+			CreateLUT(refToLookUpTables[index].LookupTable, threshold);
+		}
 	}
 }

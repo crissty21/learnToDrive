@@ -202,22 +202,7 @@ void AInterpreter::ReadFrame()
 
 	CreateTextures(finalImage, colorData);
 }
-//stay
-void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)
-{
-	if (ImageProcesingUnit)
-	{
-		ImageProcesingUnit->GetThresholds(index, threshold, useThreshold);
-	}
-}
-//stay
-void AInterpreter::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
-{
-	if (ImageProcesingUnit)
-	{
-		ImageProcesingUnit->SetThresholds(index, threshold, useThreshold);
-	}
-}
+
 //stay
 void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 {
@@ -426,3 +411,19 @@ void AInterpreter::Load()
 	ImageProcesingUnit->LoadData();
 }
 
+//stay
+void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)
+{
+	if (ImageProcesingUnit)
+	{
+		ImageProcesingUnit->GetThresholds(index, threshold, useThreshold);
+	}
+}
+//stay
+void AInterpreter::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
+{
+	if (ImageProcesingUnit)
+	{
+		ImageProcesingUnit->SetThresholds(index, threshold, useThreshold);
+	}
+}
