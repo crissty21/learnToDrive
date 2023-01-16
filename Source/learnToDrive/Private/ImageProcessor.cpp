@@ -5,15 +5,11 @@
 #include "Saver.h"
 #include "Kismet/GameplayStatics.h"
 
-
-// Sets default values for this component's properties
 UImageProcessor::UImageProcessor()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
 void UImageProcessor::BeginPlay()
 {
 	Super::BeginPlay();
@@ -33,8 +29,7 @@ cv::Mat UImageProcessor::ConvertImage(cv::Mat inputImage, int code)
 void UImageProcessor::BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& secondChanel, OUT cv::Mat& thirdChanel)
 {
 	cv::Mat channel[3];
-	cv::Mat breakk = cv::Mat(inputImage);
-	cv::split(breakk, channel);
+	cv::split(inputImage, channel);
 	firstChanel = channel[0];
 	secondChanel = channel[1];
 	thirdChanel = channel[2];
@@ -128,24 +123,45 @@ bool UImageProcessor::checkUsageBinary(const int8* table)
 {
 	return refToLookUpTables[table[0]].UseThreshold || refToLookUpTables[table[1]].UseThreshold || refToLookUpTables[table[2]].UseThreshold;
 }
+
 bool UImageProcessor::checkUsageSobel(const int8* table)
 {
 	return refToLookUpTables[table[0]].UseThreshold || refToLookUpTables[table[1]].UseThreshold || refToLookUpTables[table[2]].UseThreshold;
 }
+
 cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 {
 	cv::Mat binaryImage = cv::Mat(input.size(), CV_8UC1);
-
-	//HERE
-
-
-	//probabil nu sunt mapate cum trebuie variabileleai 
-
+	const uint8 channels = input.channels();
 	for (int16 i = 0; i < input.cols; i++)
 	{
 		for (int16 j = 0; j < input.rows; j++)
 		{
 			bool pixel = true;
+			for (uint8 k = 0; k < channels; k++)
+			{
+				if (pixel)
+				{
+					if (refToLookUpTables[threshold[k]].UseThreshold)
+					{
+						if (channels == 3)
+						{
+							pixel = pixel && (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[k]] == 1);
+						}
+						else if(channels == 4)
+						{
+							pixel = pixel && (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[k]] == 1);
+
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("Wrong channel number in binary threshold"));
+						}
+					}
+				}
+				else break;
+			}
+			/*
 			if (refToLookUpTables[threshold[0]].UseThreshold)
 			{
 				pixel = pixel && (refToLookUpTables[threshold[0]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[0]] == 1);
@@ -158,6 +174,7 @@ cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 			{
 				pixel = pixel && (refToLookUpTables[threshold[2]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[2]] == 1);
 			}
+			*/
 			binaryImage.at<uint8>(j, i) = ((uint8)(pixel));
 
 		}

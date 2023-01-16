@@ -69,8 +69,6 @@ public:
 	
 	cv::Mat ConvertImage(cv::Mat inputImage, int code);
 
-	void BreakImage(cv::Mat inputImage, OUT cv::Mat& firstChanel, OUT cv::Mat& SecondChanel, OUT cv::Mat& ThirdChanel);
-
 	void CreateLUT(uint8* LUT, FVector2D Threshold);
 
 	void GenerateLookUpTables();
