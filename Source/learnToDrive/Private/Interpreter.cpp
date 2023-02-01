@@ -129,7 +129,8 @@ void AInterpreter::ReadFrame()
 			uint8 result = 0;
 			if (LabThreshold)
 			{
-				if (SobelThreshold)
+				//hereeeeeeeeeeeeeeeee
+				if (SobelThreshold && false)
 				{
 					result = ((uint8)(sBinary.at<uint8>(j, i)||sxBinary.at<uint8>(j, i)));
 				}
@@ -140,7 +141,7 @@ void AInterpreter::ReadFrame()
 			}
 			else
 			{
-				if (SobelThreshold)
+				if (SobelThreshold && false)
 				{
 					result = sxBinary.at<uint8>(j, i);
 				}
@@ -174,8 +175,8 @@ void AInterpreter::ReadFrame()
 	
 	Mat hist;
 	Mat channel[4];
-
-	if (Dilate)
+	
+	/*if (Dilate)
 	{
 		dilate(finalImage, finalImage, Mat());
 	}
@@ -183,7 +184,7 @@ void AInterpreter::ReadFrame()
 	{
 		blur(finalImage, finalImage, Size(6, 6));
 	}
-
+	*/
 	split(finalImage, channel);
 	reduce(channel[0], hist, 0, REDUCE_SUM, CV_32SC1);
 
