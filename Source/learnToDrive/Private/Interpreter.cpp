@@ -113,39 +113,17 @@ void AInterpreter::ReadFrame()
 			warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
 		}
 	}
-	Mat sBinary = 
-		ImageProcesingUnit->PrelucrateImage(colorData);
-	//BinaryThresholdLAB_LUV(colorData, BChannelThresh, LChannelThresh);
 
-	Mat h, l, s;
-	GetHLS(colorData, h, l, s);
-	Mat sxBinary = GradientThreshold(s, 2, GradientThresh);
+	Mat sBinary = ImageProcesingUnit->PrelucrateImage(colorData);
+
 	
 	Mat finalImage = Mat(Size(512, 128), CV_8UC4);
 	for (uint16 i = 0; i < finalImage.cols; i++)
 	{
 		for (uint16 j = 0; j < finalImage.rows; j++)
 		{
-			uint8 result = 0;
-			if (LabThreshold)
-			{
-				//hereeeeeeeeeeeeeeeee
-				if (SobelThreshold && false)
-				{
-					result = ((uint8)(sBinary.at<uint8>(j, i)||sxBinary.at<uint8>(j, i)));
-				}
-				else
-				{
-					result = sBinary.at<uint8>(j, i);
-				}
-			}
-			else
-			{
-				if (SobelThreshold && false)
-				{
-					result = sxBinary.at<uint8>(j, i);
-				}
-			}
+			uint8 result = sBinary.at<uint8>(j, i);
+			
 
 			finalImage.at<Vec<uint8, 4>>(j, i)[0] = result * 255;
 			finalImage.at<Vec<uint8, 4>>(j, i)[1] = result * 255;
@@ -175,16 +153,7 @@ void AInterpreter::ReadFrame()
 	
 	Mat hist;
 	Mat channel[4];
-	
-	/*if (Dilate)
-	{
-		dilate(finalImage, finalImage, Mat());
-	}
-	if (Blur)
-	{
-		blur(finalImage, finalImage, Size(6, 6));
-	}
-	*/
+
 	split(finalImage, channel);
 	reduce(channel[0], hist, 0, REDUCE_SUM, CV_32SC1);
 

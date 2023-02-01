@@ -119,7 +119,7 @@ bool UImageProcessor::checkUsageSobel(const int8* table)
 
 cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 {
-	cv::Mat binaryImage = cv::Mat::ones(input.size(), CV_8UC1);
+	cv::Mat binaryImage = cv::Mat::ones(input.size(), CV_8UC1) * 255;
 
 	if (input.channels() == 3)
 	{
@@ -183,7 +183,6 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 		if (added)
 		{
 			cv::bitwise_or(finalImage, result, finalImage);
-			//finalImage = OrMats(finalImage, result);
 		}
 		else
 		{
@@ -206,7 +205,6 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 			if (added)
 			{
 				cv::bitwise_or(finalImage, result, finalImage);
-				//finalImage = OrMats(finalImage, result);
 			}
 			else
 			{
@@ -230,7 +228,6 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 			if (added)
 			{
 				cv::bitwise_or(finalImage, result, finalImage);
-				//finalImage = OrMats(finalImage, result);
 			}
 			else
 			{
