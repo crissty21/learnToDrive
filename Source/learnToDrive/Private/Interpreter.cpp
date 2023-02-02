@@ -74,7 +74,7 @@ void AInterpreter::Tick(float DeltaTime)
 			{
 				TextureRenderRef->UpdateTexture2D(Texture1, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
 				ReadFrame();
-				if (Texture1->PlatformData->Mips[0].BulkData.IsLocked() == false)
+				if (Texture1->GetPlatformData()->Mips[0].BulkData.IsLocked() == false)
 				{
 					Texture1->UpdateResource();
 				}
@@ -146,20 +146,20 @@ void AInterpreter::ReadFrame()
 	CreateTextures(finalImage, colorData);
 }
 
-//stay
+
 void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 {
-	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	void* textureData = Texture2->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	const uint32 dataSize = 512 * 128 * 4 * sizeof(uint8);
 	FMemory::Memcpy(textureData, secondImage.data, dataSize);
 
-	Texture2->PlatformData->Mips[0].BulkData.Unlock();
+	Texture2->GetPlatformData()->Mips[0].BulkData.Unlock();
 	Texture2->UpdateResource();
 
-	void* texture3Data = Texture3->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	void* texture3Data = Texture3->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	FMemory::Memcpy(texture3Data, thirdImage.data, dataSize);
 
-	Texture3->PlatformData->Mips[0].BulkData.Unlock();
+	Texture3->GetPlatformData()->Mips[0].BulkData.Unlock();
 	Texture3->UpdateResource();
 }
 //stay for now
