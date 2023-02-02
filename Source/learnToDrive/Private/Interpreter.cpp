@@ -94,16 +94,24 @@ void AInterpreter::Tick(float DeltaTime)
 
 void AInterpreter::ReadFrame()
 {
-	FRenderTarget* renderTarget = TextureRenderRef->GameThread_GetRenderTargetResource();
-	renderTarget->ReadPixels(ColorData);
-
+	//read the pixels
+	TextureRenderRef->GameThread_GetRenderTargetResource()->ReadPixels(ColorData);
+	//create a mat with the data from pixels 
 	cv::Mat colorData = cv::Mat(cv::Size(512,128), CV_8UC4, ColorData.GetData());
 
-	cv::Mat perspective;
+	if (DrawPerspectiveLines)
+	{
+		CreateAndDrawPerspectiveLines(colorData);
+	}	
+
 	if (PerspectiveWarpBinary || PerspectiveWarpRaw)
 	{
-		perspective = getPerspectiveTransform(srcPts, destPts);
+		cv::Mat perspective = getPerspectiveTransform(srcPts, destPts);
 		if (PerspectiveWarpBinary)
+		{
+			warpPerspective(colorData, colorData, perspective, cv::Size(VideoSize.X, VideoSize.Y));
+		}
+		else if (PerspectiveWarpRaw)
 		{
 			warpPerspective(colorData, colorData, perspective, cv::Size(VideoSize.X, VideoSize.Y));
 		}
@@ -112,35 +120,27 @@ void AInterpreter::ReadFrame()
 	cv::Mat finalImage = ImageProcesingUnit->PrelucrateImage(colorData);
 	//we get a single channel image, so we need to convert it to a 4 channel image to be displayed on screen 
 	cv::cvtColor(finalImage, finalImage, cv::COLOR_GRAY2RGBA);
-
-	if (DrawPerspectiveLines)
-	{
-		CreateAndDrawPerspectiveLines(colorData);
-	}	
-	if (PerspectiveWarpRaw && !PerspectiveWarpBinary)
-	{
-		warpPerspective(colorData, colorData, perspective, cv::Size(VideoSize.X, VideoSize.Y));
-	}
 	
 
 	
 	cv::Mat hist;
 	cv::Mat channel[4];
 
-	split(finalImage, channel);
-	reduce(channel[0], hist, 0, cv::REDUCE_SUM, CV_32SC1);
+	cv::split(finalImage, channel);
+	cv::reduce(channel[0], hist, 0, cv::REDUCE_SUM, CV_32SC1);
 
 	if (ShowHistogram)
 	{
 		cv::Mat img = DrawHistogram(hist);
 		colorData = img;
 	}
+	
 	if (ShowMaxLane)
 	{
 		cv::Point2i left, right;
 		GetHistogramPeaksFinalMethod(hist, left, right);
-		line(finalImage, cv::Point(left.x, 0), cv::Point(left.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
-		line(finalImage, cv::Point(right.x, 0), cv::Point(right.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
+		cv::line(finalImage, cv::Point(left.x, 0), cv::Point(left.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
+		cv::line(finalImage, cv::Point(right.x, 0), cv::Point(right.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
 	}
 
 	CreateTextures(finalImage, colorData);
@@ -200,7 +200,6 @@ cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 //not yet
 void AInterpreter::GetHistogramPeaksFinalMethod(cv::Mat& hist, cv::Point2i& leftMax, cv::Point2i& rightMax)
 {
-
 	cv::Point2i maxLocal(0,0);
 	for (uint16 i = 0; i < hist.cols; i++)
 	{
