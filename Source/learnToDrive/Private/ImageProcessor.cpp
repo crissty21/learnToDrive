@@ -242,6 +242,15 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 			//save result with OR in final image
 		}
 	}
+	if (UseBlur)
+	{
+		cv::medianBlur(finalImage, finalImage, KernelBlurSize);
+	}
+	if (UseErodeDilate)
+	{
+		cv::erode(finalImage, finalImage, elementErode);
+		cv::dilate(finalImage, finalImage, elementDilate);
+	}
 	cv::threshold(finalImage, finalImage, 0, 1, cv::THRESH_BINARY);
 	return finalImage;
 }
@@ -267,3 +276,9 @@ void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useTh
 		}
 	}
 }
+/*
+* rgb third: 130 - 255
+* hls third: 80 - 255
+*     second: 20 - 70
+*	  first: 15 - 20
+*/
