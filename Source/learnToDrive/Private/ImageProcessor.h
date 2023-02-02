@@ -94,4 +94,25 @@ private:
 	const int8 RGBs[6] = { 0,1,2,3,4,5 };
 	const int8 HLSs[6] = { 6,7,8,9,10,11};
 	const int8 LABs[6] = { 12,13,14,15,16,17};
+
+	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
+		uint8 ErosionSize = 1;
+	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
+		uint8 DilationSize = 3;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
+		bool UseErodeDilate = true;
+	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
+		uint8 KernelBlurSize = 11;
+	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
+		bool UseBlur = false;
+
+	
+	const cv::Mat elementErode = cv::getStructuringElement(cv::MORPH_RECT,
+		cv::Size(2 * ErosionSize + 1, 2 * ErosionSize + 1),
+		cv::Point(ErosionSize, ErosionSize));
+
+	const cv::Mat elementDilate = cv::getStructuringElement(cv::MORPH_RECT,
+		cv::Size(2 * DilationSize + 1, 2 * DilationSize + 1),
+		cv::Point(DilationSize, DilationSize));
 };

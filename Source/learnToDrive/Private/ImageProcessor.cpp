@@ -5,6 +5,11 @@
 #include "Saver.h"
 #include "Kismet/GameplayStatics.h"
 
+/*
+
+
+*/
+
 UImageProcessor::UImageProcessor()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -44,7 +49,7 @@ void UImageProcessor::CreateLUT(uint8* LUT, FVector2D Threshold)
 
 void UImageProcessor::GenerateLookUpTables()
 {
-	for(FChanelThreshold& iter : refToLookUpTables)
+	for (FChanelThreshold& iter : refToLookUpTables)
 	{
 		if (iter.UseThreshold)
 		{
@@ -70,7 +75,7 @@ void UImageProcessor::SaveData()
 void UImageProcessor::LoadData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Loaded"));
-	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::LoadGameFromSlot("Thresholds",0));
+	USaver* SaveGameInstance = Cast<USaver>(UGameplayStatics::LoadGameFromSlot("Thresholds", 0));
 	int8 index = 0;
 	if (SaveGameInstance == nullptr)
 	{
@@ -78,8 +83,8 @@ void UImageProcessor::LoadData()
 		return;
 	}
 	for (FChanelThreshold& iter : refToLookUpTables)
-	{		
-		iter.Threshold = SaveGameInstance->ThresholdsToBeSaved[index].Threshold;	
+	{
+		iter.Threshold = SaveGameInstance->ThresholdsToBeSaved[index].Threshold;
 		iter.UseThreshold = SaveGameInstance->ThresholdsToBeSaved[index].UseThreshold;
 		index++;
 	}
@@ -114,40 +119,38 @@ bool UImageProcessor::checkUsageSobel(const int8* table)
 
 cv::Mat UImageProcessor::BinaryThreshold(cv::Mat input, const int8* threshold)
 {
-	cv::Mat binaryImage = cv::Mat(input.size(), CV_8UC1);
-	const uint8 channels = input.channels();
-	for (int16 i = 0; i < input.cols; i++)
+	cv::Mat binaryImage = cv::Mat::ones(input.size(), CV_8UC1) * 255;
+
+	if (input.channels() == 3)
 	{
-		for (int16 j = 0; j < input.rows; j++)
+		cv::Mat chanels[3];
+		cv::split(input, chanels);
+		for (uint8 i = 0; i < 3; ++i)
 		{
-			bool pixel = false;
-			for (uint8 k = 0; k < channels; k++)
+			if (refToLookUpTables[threshold[i]].UseThreshold)
 			{
-				if (!pixel)
-				{
-					if (refToLookUpTables[threshold[k]].UseThreshold)
-					{
-						if (channels == 3)
-						{
-							pixel = pixel || (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 3>>(j, i)[k]] == 1);
-						}
-						else if(channels == 4)
-						{
-							pixel = pixel || (refToLookUpTables[threshold[k]].LookupTable[input.at<cv::Vec<uint8, 4>>(j, i)[k]] == 1);
-
-						}
-						else
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Wrong channel number in binary threshold"));
-						}
-					}
-				}
-				else break;
+				cv::inRange(chanels[i], refToLookUpTables[threshold[i]].Threshold.X, refToLookUpTables[threshold[i]].Threshold.Y, chanels[i]);
+				cv::threshold(chanels[i], chanels[i], 0,255,cv::THRESH_BINARY);
+				cv::bitwise_and(binaryImage, chanels[i], binaryImage);
 			}
-			binaryImage.at<uint8>(j, i) = ((uint8)(pixel));
-
 		}
 	}
+	else
+	{
+		cv::Mat chanels[4];
+		cv::split(input, chanels);
+		cv::bitwise_or(chanels[1], 1, binaryImage);
+		for (uint8 i = 0; i < 3; ++i)
+		{
+			if (refToLookUpTables[threshold[i]].UseThreshold)
+			{
+				cv::inRange(chanels[i], refToLookUpTables[threshold[i]].Threshold.X, refToLookUpTables[threshold[i]].Threshold.Y, chanels[i]);
+				cv::threshold(chanels[i], chanels[i], 0, 255, cv::THRESH_BINARY);
+				cv::bitwise_and(binaryImage, chanels[i], binaryImage);
+			}
+		}
+	}
+
 	return binaryImage;
 }
 
@@ -160,7 +163,7 @@ cv::Mat UImageProcessor::OrMats(const cv::Mat first, const cv::Mat second)
 		for (int16 j = 0; j < first.rows; j++)
 		{
 			binaryImage.at<uint8>(j, i) = ((uint8)(
-				first.at<uint8>(j,i) == 1 || second.at<uint8>(j,i) == 1
+				first.at<uint8>(j, i) == 1 || second.at<uint8>(j, i) == 1
 				));
 		}
 	}
@@ -175,10 +178,11 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 	//we check to see for each image type
 	if (checkUsageBinary(RGBs))
 	{
-		result = BinaryThreshold(image,RGBs);
+
+		result = BinaryThreshold(image, RGBs);
 		if (added)
 		{
-			finalImage = OrMats(finalImage, result);
+			cv::bitwise_or(finalImage, result, finalImage);
 		}
 		else
 		{
@@ -200,7 +204,7 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 			result = BinaryThreshold(labImage, LABs);
 			if (added)
 			{
-				finalImage = OrMats(finalImage, result);
+				cv::bitwise_or(finalImage, result, finalImage);
 			}
 			else
 			{
@@ -223,7 +227,7 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 			result = BinaryThreshold(hlsImage, HLSs);
 			if (added)
 			{
-				finalImage = OrMats(finalImage, result);
+				cv::bitwise_or(finalImage, result, finalImage);
 			}
 			else
 			{
@@ -238,7 +242,16 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 			//save result with OR in final image
 		}
 	}
-
+	if (UseBlur)
+	{
+		cv::medianBlur(finalImage, finalImage, KernelBlurSize);
+	}
+	if (UseErodeDilate)
+	{
+		cv::erode(finalImage, finalImage, elementErode);
+		cv::dilate(finalImage, finalImage, elementDilate);
+	}
+	cv::threshold(finalImage, finalImage, 0, 1, cv::THRESH_BINARY);
 	return finalImage;
 }
 
@@ -263,3 +276,9 @@ void UImageProcessor::SetThresholds(int32 index, FVector2D threshold, bool useTh
 		}
 	}
 }
+/*
+* rgb third: 130 - 255
+* hls third: 80 - 255
+*     second: 20 - 70
+*	  first: 15 - 20
+*/
