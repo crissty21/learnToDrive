@@ -251,7 +251,7 @@ cv::Mat UImageProcessor::PrelucrateImage(cv::Mat image)
 		cv::erode(finalImage, finalImage, elementErode);
 		cv::dilate(finalImage, finalImage, elementDilate);
 	}
-	cv::threshold(finalImage, finalImage, 0, 1, cv::THRESH_BINARY);
+	cv::threshold(finalImage, finalImage, 0, 255, cv::THRESH_BINARY);
 	return finalImage;
 }
 

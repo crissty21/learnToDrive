@@ -18,29 +18,24 @@ void AInterpreter::BeginPlay()
 {
 	Super::BeginPlay();
 	BindInput();
-	CreateTextures();
+	ConstructTextures();
 
 	ColorData.AddDefaulted(VideoSize.X * VideoSize.Y);
-	flipflop = true;
+	//flipflop = true;
 	RefreshTimer = 0.f;
 
-	CreateLUT(LUTb, BChannelThresh);
-	CreateLUT(LUTs, SChannelThresh);
-	CreateLUT(LUTl, LChannelThresh);
-	CreateLUT(LUTa, AChannelThresh);
+	srcPts[0] = cv::Point2f(SourcePoints[0].X, SourcePoints[0].Y);
+	srcPts[1] = cv::Point2f(SourcePoints[1].X, SourcePoints[1].Y);
+	srcPts[2] = cv::Point2f(SourcePoints[2].X, SourcePoints[2].Y);
+	srcPts[3] = cv::Point2f(SourcePoints[3].X, SourcePoints[3].Y);
 
-	srcPts[0] = Point2f(SourcePoints[0].X, SourcePoints[0].Y);
-	srcPts[1] = Point2f(SourcePoints[1].X, SourcePoints[1].Y);
-	srcPts[2] = Point2f(SourcePoints[2].X, SourcePoints[2].Y);
-	srcPts[3] = Point2f(SourcePoints[3].X, SourcePoints[3].Y);
-
-	destPts[0] = Point2f(Offset, 0);
-	destPts[1] = Point2f(Offset, VideoSize.Y);
-	destPts[2] = Point2f(VideoSize.X - Offset, VideoSize.Y);
-	destPts[3] = Point2f(VideoSize.X - Offset, 0);
+	destPts[0] = cv::Point2f(Offset, 0);
+	destPts[1] = cv::Point2f(Offset, VideoSize.Y);
+	destPts[2] = cv::Point2f(VideoSize.X - Offset, VideoSize.Y);
+	destPts[3] = cv::Point2f(VideoSize.X - Offset, 0);
 }
 //stay
-void AInterpreter::CreateTextures()
+void AInterpreter::ConstructTextures()
 {
 	if (TextureRenderRef)
 	{
@@ -77,9 +72,9 @@ void AInterpreter::Tick(float DeltaTime)
 		{
 			if (RefreshTimer >= 1.0f / RefreshRate) 
 			{
-				//TextureRenderRef->UpdateTexture2D(Texture1, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
+				TextureRenderRef->UpdateTexture2D(Texture1, TextureRenderRef->GetTextureFormatForConversionToTexture2D(), EConstructTextureFlags::CTF_DeferCompression);
 				ReadFrame();
-				if (Texture1->PlatformData->Mips[0].BulkData.IsLocked() == false)
+				if (Texture1->GetPlatformData()->Mips[0].BulkData.IsLocked() == false)
 				{
 					Texture1->UpdateResource();
 				}
@@ -99,241 +94,113 @@ void AInterpreter::Tick(float DeltaTime)
 
 void AInterpreter::ReadFrame()
 {
-	FRenderTarget* renderTarget = TextureRenderRef->GameThread_GetRenderTargetResource();
-	renderTarget->ReadPixels(ColorData);
+	//read the pixels
+	TextureRenderRef->GameThread_GetRenderTargetResource()->ReadPixels(ColorData);
+	//create a mat with the data from pixels 
+	cv::Mat colorData = cv::Mat(cv::Size(512,128), CV_8UC4, ColorData.GetData());
 
-	Mat colorData = Mat(Size(512,128), CV_8UC4, ColorData.GetData());
-
-	Mat perspective;
-	if (PerspectiveWarpBinary || PerspectiveWarpRaw)
-	{
-		perspective = getPerspectiveTransform(srcPts, destPts);
-		if (PerspectiveWarpBinary)
-		{
-			warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
-		}
-	}
-
-	Mat sBinary = ImageProcesingUnit->PrelucrateImage(colorData);
-
-	
-	Mat finalImage = Mat(Size(512, 128), CV_8UC4);
-	for (uint16 i = 0; i < finalImage.cols; i++)
-	{
-		for (uint16 j = 0; j < finalImage.rows; j++)
-		{
-			uint8 result = sBinary.at<uint8>(j, i);
-			
-
-			finalImage.at<Vec<uint8, 4>>(j, i)[0] = result * 255;
-			finalImage.at<Vec<uint8, 4>>(j, i)[1] = result * 255;
-			finalImage.at<Vec<uint8, 4>>(j, i)[2] = result * 255;
-			finalImage.at<Vec<uint8, 4>>(j, i)[3] = 255;
-
-			if (result == 1 && DrawEdgesInRed)
-			{
-				colorData.at<Vec<uint8, 4>>(j, i)[0] = 10;
-				colorData.at<Vec<uint8, 4>>(j, i)[1] = 10;
-				colorData.at<Vec<uint8, 4>>(j, i)[2] = 255;
-			}
-
-		}
-	}
-	
 	if (DrawPerspectiveLines)
 	{
 		CreateAndDrawPerspectiveLines(colorData);
 	}	
-	if (PerspectiveWarpRaw && !PerspectiveWarpBinary)
+
+	if (PerspectiveWarpBinary || PerspectiveWarpRaw)
 	{
-		warpPerspective(colorData, colorData, perspective, Size(VideoSize.X, VideoSize.Y));
+		cv::Mat perspective = getPerspectiveTransform(srcPts, destPts);
+		if (PerspectiveWarpBinary)
+		{
+			warpPerspective(colorData, colorData, perspective, cv::Size(VideoSize.X, VideoSize.Y));
+		}
+		else if (PerspectiveWarpRaw)
+		{
+			warpPerspective(colorData, colorData, perspective, cv::Size(VideoSize.X, VideoSize.Y));
+		}
 	}
+
+	cv::Mat finalImage = ImageProcesingUnit->PrelucrateImage(colorData);
+	//we get a single channel image, so we need to convert it to a 4 channel image to be displayed on screen 
+	cv::cvtColor(finalImage, finalImage, cv::COLOR_GRAY2RGBA);
 	
 
 	
-	Mat hist;
-	Mat channel[4];
+	cv::Mat hist;
+	cv::Mat channel[4];
 
-	split(finalImage, channel);
-	reduce(channel[0], hist, 0, REDUCE_SUM, CV_32SC1);
+	cv::split(finalImage, channel);
+	cv::reduce(channel[0], hist, 0, cv::REDUCE_SUM, CV_32SC1);
 
 	if (ShowHistogram)
 	{
-		Mat img = DrawHistogram(hist);
+		cv::Mat img = DrawHistogram(hist);
 		colorData = img;
 	}
+	
 	if (ShowMaxLane)
 	{
-		Point2i left, right;
-		GetHistogramPeaksFinalMethod(hist, left, right);
-		line(finalImage, Point(left.x, 0), Point(left.x, finalImage.rows), Scalar(255, 0, 0, 255), 2);
-		line(finalImage, Point(right.x, 0), Point(right.x, finalImage.rows), Scalar(255, 0, 0, 255), 2);
+		cv::Point2i left, right;
+		GetHistogramPeaks(hist, left, right);
+		cv::line(finalImage, cv::Point(left.x, 0), cv::Point(left.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
+		cv::line(finalImage, cv::Point(right.x, 0), cv::Point(right.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
 	}
 
 	CreateTextures(finalImage, colorData);
 }
 
-//stay
+				   
 void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 {
-	void* textureData = Texture2->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	void* textureData = Texture2->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	const uint32 dataSize = 512 * 128 * 4 * sizeof(uint8);
 	FMemory::Memcpy(textureData, secondImage.data, dataSize);
 
-	Texture2->PlatformData->Mips[0].BulkData.Unlock();
+	Texture2->GetPlatformData()->Mips[0].BulkData.Unlock();
 	Texture2->UpdateResource();
 
-	void* texture3Data = Texture3->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	void* texture3Data = Texture3->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
 	FMemory::Memcpy(texture3Data, thirdImage.data, dataSize);
 
-	Texture3->PlatformData->Mips[0].BulkData.Unlock();
+	Texture3->GetPlatformData()->Mips[0].BulkData.Unlock();
 	Texture3->UpdateResource();
 }
 //stay for now
 void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
 {
-	line(colorData, Point(srcPts[0]), Point(srcPts[1]), Scalar(255, 0, 0, 255), 2);
-	line(colorData, Point(srcPts[1]), Point(srcPts[2]), Scalar(255, 0, 0, 255), 2);
-	line(colorData, Point(srcPts[2]), Point(srcPts[3]), Scalar(255, 0, 0, 255), 2);
-	line(colorData, Point(srcPts[3]), Point(srcPts[0]), Scalar(255, 0, 0, 255), 2);
+	line(colorData, cv::Point(srcPts[0]), cv::Point(srcPts[1]), cv::Scalar(255, 0, 0, 255), 2);
+	line(colorData, cv::Point(srcPts[1]), cv::Point(srcPts[2]), cv::Scalar(255, 0, 0, 255), 2);
+	line(colorData, cv::Point(srcPts[2]), cv::Point(srcPts[3]), cv::Scalar(255, 0, 0, 255), 2);
+	line(colorData, cv::Point(srcPts[3]), cv::Point(srcPts[0]), cv::Scalar(255, 0, 0, 255), 2);
 }
 //not yet
-Mat AInterpreter::DrawHistogram(Mat& hist)
+cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 {
 	uint16 hist_w = 512;
 	uint16 hist_h = 128;
 	uint16 histSize = 256;
 	uint16 bin_w = cvRound((double)hist_w / histSize);
 
-	Mat histImage(hist_h,hist_w,CV_8UC4,Scalar(0,0,0));
+	cv::Mat histImage(hist_h,hist_w,CV_8UC4, cv::Scalar(0,0,0));
 	//normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
 	for (int16 i = 1; i < hist_w; i++)
 	{
 		line(histImage,
-			Point((i - 1), hist_h - hist.at<int32>(i - 1) /histSize),
-			Point(i, hist_h - hist.at<int32>(i) /histSize),
-			Scalar(255, 255, 255, 255),2);
+			cv::Point((i - 1), hist_h - hist.at<int32>(i - 1) /histSize),
+			cv::Point(i, hist_h - hist.at<int32>(i) /histSize),
+			cv::Scalar(255, 255, 255, 255),2);
 	}
-	Point2i left, right;
-	if (UseBetterMethod)
-	{
-		GetHistogramPeaksFinalMethod(hist, left, right);
-	}
-	else
-	{
-		GetHistogramPeaksFirstMethod(hist, left, right);
-	}
+	cv::Point2i left, right;
+	GetHistogramPeaks(hist, left, right);
+
 	left.y = hist_h - left.y / 256;
 	right.y = hist_h - right.y / 256;
-	circle(histImage, left, 3, Scalar(0, 0, 255, 255), 2);
-	circle(histImage, right, 3, Scalar(0, 0, 255, 255), 2);
+	circle(histImage, left, 3, cv::Scalar(0, 0, 255, 255), 2);
+	circle(histImage, right, 3, cv::Scalar(0, 0, 255, 255), 2);
 
 	return histImage;
 }
-//moved
-void AInterpreter::GetHLS(Mat inputRGB, Mat& outputH, Mat& outputL, Mat& outputS)
-{
-	Mat Output; 
-	cvtColor(inputRGB, Output, cv::COLOR_BGR2HLS);
-	Mat channel[3];
-	split(Output, channel);
-	outputH = channel[0];
-	outputL = channel[1];
-	outputS = channel[2];
-}
-//moved
-void AInterpreter::GetLAB(Mat inputRGB, Mat& outputL, Mat& outputA, Mat& outputB)
-{
-	Mat Output;
-	cvtColor(inputRGB, Output, cv::COLOR_RGB2Lab);
-	Mat channel[3];
-	split(Output, channel);
-	outputL = channel[0];
-	outputA = channel[1];
-	outputB = channel[2];
-}
-
-//binary threshold 
-Mat AInterpreter::BinaryThresholdLAB_LUV(Mat inputRGB, const FVector2D bThreshold, const FVector2D lThreshold)
-{
-	//creates binary mask 
-	Mat binaryImage = Mat(inputRGB.size(),CV_8UC1);
-	Mat outL, outA, outB;
-	GetLAB(inputRGB, outL, outA, outB);
-
-	
-	for (int16 i = 0; i < inputRGB.cols; i++)
-	{
-		for (int16 j = 0; j < inputRGB.rows; j++)
-		{
-			binaryImage.at<uint8>(j, i) = ((uint8)(LUTb[outB.at<uint8>(j, i)] == 1 && LUTl[outL.at<uint8>(j, i)] == 1 && LUTa[outA.at<uint8>(j, i)] == 1));
-		}
-	}
-				
-	return binaryImage;
-}
-//sobel threshold to be moved and rewrited 
-cv::Mat AInterpreter::GradientThreshold(Mat input, int channel, const FVector2D threshold)
-{
-	Mat binaryImage = Mat(input.size(), CV_8UC1);
-	Mat sobel;
-	//blur
-	blur(input, input, Size(KSizeForBlur.X,KSizeForBlur.Y));
-	Sobel(input, sobel, CV_8U, 1, 0);
-	
-	for (uint16 i = 0; i < input.cols; i++)
-	{
-		for (uint16 j = 0; j < input.rows; j++)
-		{
-			binaryImage.at<uint8>(j, i) = ((uint8)(sobel.at<int8>(j, i) > threshold[0] && sobel.at<uint8>(j, i) < threshold[1]));
-		}
-	}
-	return binaryImage;
-}
-
-
-//moved
-void AInterpreter::CreateLUT(uint8* LUT, FVector2D Threshold)
-{
-	for (uint16 i = 0; i < 256; i++)
-	{
-		if (i >= Threshold[0] && i <= Threshold[1])
-		{
-			LUT[i] = 1;
-		}
-		else
-		{
-			LUT[i] = 0;
-		}
-	}
-
-}
 //not yet
-void AInterpreter::GetHistogramPeaksFirstMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)
+void AInterpreter::GetHistogramPeaks(cv::Mat& hist, cv::Point2i& leftMax, cv::Point2i& rightMax)
 {
-	leftMax.y = rightMax.y = 0;
-	for (uint16 i = 0; i < hist.cols/2; i++)
-	{
-		if (hist.at<int32>(i) > leftMax.y)
-		{
-			leftMax.x = i;
-			leftMax.y = hist.at<int32>(i);
-		}
-	}
-	for (uint16 i = hist.cols / 2; i < hist.cols; i++)
-	{
-		if (hist.at<int32>(i) > rightMax.y)
-		{
-			rightMax.x = i;
-			rightMax.y = hist.at<int32>(i);
-		}
-	}
-}
-//not yet
-void AInterpreter::GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Point2i& rightMax)
-{
-
-	Point2i maxLocal(0,0);
+	cv::Point2i maxLocal(0,0);
 	for (uint16 i = 0; i < hist.cols; i++)
 	{
 		if (hist.at<int32>(i) > maxLocal.y)
@@ -354,7 +221,7 @@ void AInterpreter::GetHistogramPeaksFinalMethod(Mat& hist, Point2i& leftMax, Poi
 				{
 					rightMax = maxLocal;
 				}
-				maxLocal = Point2i(0, 0);
+				maxLocal = cv::Point2i(0, 0);
 			}
 		}
 	}

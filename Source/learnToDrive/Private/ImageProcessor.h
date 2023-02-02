@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -52,6 +50,11 @@ enum EThresholds
 	B_LAB_Sobel
 };
 
+class UHistogramProcessor
+{
+
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UImageProcessor : public UActorComponent
 {
@@ -65,41 +68,22 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	
-	
-	cv::Mat ConvertImage(cv::Mat inputImage, int code);
-
-	void CreateLUT(uint8* LUT, FVector2D Threshold);
-
-	void GenerateLookUpTables();
 
 	void SaveData();
 	void LoadData();
-	void LoadSettingsClear();
 
 	UFUNCTION()
 		void GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold);
 	UFUNCTION()
 		void SetThresholds(int32 index, FVector2D threshold, bool useThreshold);
 
-
 	cv::Mat PrelucrateImage(cv::Mat);
 private:
-	bool checkUsageBinary(const int8* table);
-	bool checkUsageSobel(const int8* table);
-	cv::Mat BinaryThreshold(cv::Mat input, const int8* threshold);
-	cv::Mat OrMats(const cv::Mat first, const cv::Mat second);
-	TArray<FChanelThreshold> refToLookUpTables;
-
-	const int8 RGBs[6] = { 0,1,2,3,4,5 };
-	const int8 HLSs[6] = { 6,7,8,9,10,11};
-	const int8 LABs[6] = { 12,13,14,15,16,17};
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
 		uint8 ErosionSize = 1;
 	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
 		uint8 DilationSize = 3;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
 		bool UseErodeDilate = true;
 	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
@@ -107,7 +91,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
 		bool UseBlur = false;
 
-	
 	const cv::Mat elementErode = cv::getStructuringElement(cv::MORPH_RECT,
 		cv::Size(2 * ErosionSize + 1, 2 * ErosionSize + 1),
 		cv::Point(ErosionSize, ErosionSize));
@@ -115,4 +98,23 @@ private:
 	const cv::Mat elementDilate = cv::getStructuringElement(cv::MORPH_RECT,
 		cv::Size(2 * DilationSize + 1, 2 * DilationSize + 1),
 		cv::Point(DilationSize, DilationSize));
+	
+	const int8 RGBs[6] = { 0,1,2,3,4,5 };
+	const int8 HLSs[6] = { 6,7,8,9,10,11};
+	const int8 LABs[6] = { 12,13,14,15,16,17};
+	
+	TArray<FChanelThreshold> refToLookUpTables;
+
+	cv::Mat ConvertImage(cv::Mat inputImage, int code);
+	cv::Mat BinaryThreshold(cv::Mat input, const int8* threshold);
+	cv::Mat OrMats(const cv::Mat first, const cv::Mat second);
+
+	bool checkUsageBinary(const int8* table);
+	bool checkUsageSobel(const int8* table);
+
+	void CreateLUT(uint8* LUT, FVector2D Threshold);
+	void LoadSettingsClear();
+	void GenerateLookUpTables();
+
+
 };
