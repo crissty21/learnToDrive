@@ -18,7 +18,7 @@ void AInterpreter::BeginPlay()
 {
 	Super::BeginPlay();
 	BindInput();
-	CreateTextures();
+	ConstructTextures();
 
 	ColorData.AddDefaulted(VideoSize.X * VideoSize.Y);
 	//flipflop = true;
@@ -35,7 +35,7 @@ void AInterpreter::BeginPlay()
 	destPts[3] = cv::Point2f(VideoSize.X - Offset, 0);
 }
 //stay
-void AInterpreter::CreateTextures()
+void AInterpreter::ConstructTextures()
 {
 	if (TextureRenderRef)
 	{
@@ -138,7 +138,7 @@ void AInterpreter::ReadFrame()
 	if (ShowMaxLane)
 	{
 		cv::Point2i left, right;
-		GetHistogramPeaksFinalMethod(hist, left, right);
+		GetHistogramPeaks(hist, left, right);
 		cv::line(finalImage, cv::Point(left.x, 0), cv::Point(left.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
 		cv::line(finalImage, cv::Point(right.x, 0), cv::Point(right.x, finalImage.rows), cv::Scalar(255, 0, 0, 255), 2);
 	}
@@ -146,7 +146,7 @@ void AInterpreter::ReadFrame()
 	CreateTextures(finalImage, colorData);
 }
 
-
+				   
 void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 {
 	void* textureData = Texture2->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
@@ -188,7 +188,7 @@ cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 			cv::Scalar(255, 255, 255, 255),2);
 	}
 	cv::Point2i left, right;
-	GetHistogramPeaksFinalMethod(hist, left, right);
+	GetHistogramPeaks(hist, left, right);
 
 	left.y = hist_h - left.y / 256;
 	right.y = hist_h - right.y / 256;
@@ -198,7 +198,7 @@ cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 	return histImage;
 }
 //not yet
-void AInterpreter::GetHistogramPeaksFinalMethod(cv::Mat& hist, cv::Point2i& leftMax, cv::Point2i& rightMax)
+void AInterpreter::GetHistogramPeaks(cv::Mat& hist, cv::Point2i& leftMax, cv::Point2i& rightMax)
 {
 	cv::Point2i maxLocal(0,0);
 	for (uint16 i = 0; i < hist.cols; i++)
