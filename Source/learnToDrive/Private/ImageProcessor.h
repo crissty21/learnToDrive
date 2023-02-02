@@ -33,27 +33,14 @@ enum EThresholds
 	R_RGB_Binary,
 	G_RGB_Binary,
 	B_RGB_Binary,
-	R_RGB_Sobel,
-	G_RGB_Sobel,
-	B_RGB_Sobel,
 	H_HLS_Binary,
 	L_HLS_Binary,
 	S_HLS_Binary,
-	H_HLS_Sobel,
-	L_HLS_Sobel,
-	S_HLS_Sobel,
 	L_LAB_Binary,
 	A_LAB_Binary,
-	B_LAB_Binary,
-	L_LAB_Sobel,
-	A_LAB_Sobel,
-	B_LAB_Sobel
+	B_LAB_Binary
 };
 
-class UHistogramProcessor
-{
-
-};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UImageProcessor : public UActorComponent
@@ -99,18 +86,16 @@ private:
 		cv::Size(2 * DilationSize + 1, 2 * DilationSize + 1),
 		cv::Point(DilationSize, DilationSize));
 	
-	const int8 RGBs[6] = { 0,1,2,3,4,5 };
-	const int8 HLSs[6] = { 6,7,8,9,10,11};
-	const int8 LABs[6] = { 12,13,14,15,16,17};
+	const int8 RGBs[6] = { 0,1,2 };
+	const int8 HLSs[6] = { 3,4,5 };
+	const int8 LABs[6] = { 6,7,8 };
 	
 	TArray<FChanelThreshold> refToLookUpTables;
 
 	cv::Mat ConvertImage(cv::Mat inputImage, int code);
 	cv::Mat BinaryThreshold(cv::Mat input, const int8* threshold);
-	cv::Mat OrMats(const cv::Mat first, const cv::Mat second);
 
 	bool checkUsageBinary(const int8* table);
-	bool checkUsageSobel(const int8* table);
 
 	void CreateLUT(uint8* LUT, FVector2D Threshold);
 	void LoadSettingsClear();
