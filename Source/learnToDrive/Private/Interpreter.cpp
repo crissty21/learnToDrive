@@ -162,7 +162,7 @@ void AInterpreter::CreateTextures(cv::Mat& secondImage, cv::Mat& thirdImage)
 	Texture3->GetPlatformData()->Mips[0].BulkData.Unlock();
 	Texture3->UpdateResource();
 }
-//stay for now
+
 void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
 {
 	line(colorData, cv::Point(srcPts[0]), cv::Point(srcPts[1]), cv::Scalar(255, 0, 0, 255), 2);
@@ -170,7 +170,7 @@ void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
 	line(colorData, cv::Point(srcPts[2]), cv::Point(srcPts[3]), cv::Scalar(255, 0, 0, 255), 2);
 	line(colorData, cv::Point(srcPts[3]), cv::Point(srcPts[0]), cv::Scalar(255, 0, 0, 255), 2);
 }
-//not yet
+
 cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 {
 	uint16 hist_w = 512;
@@ -197,7 +197,7 @@ cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 
 	return histImage;
 }
-//not yet
+
 void AInterpreter::GetHistogramPeaks(cv::Mat& hist, cv::Point2i& leftMax, cv::Point2i& rightMax)
 {
 	cv::Point2i maxLocal(0,0);
@@ -236,19 +236,19 @@ void AInterpreter::GetHistogramPeaks(cv::Mat& hist, cv::Point2i& leftMax, cv::Po
 	}
 	
 }
-//stay
+
 void AInterpreter::Save()
 {
 	//dummy function 
 	ImageProcesingUnit->SaveData();
 }
-//stay
+
 void AInterpreter::Load()
 {
 	ImageProcesingUnit->LoadData();
 }
 
-//stay
+
 void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThreshold)
 {
 	if (ImageProcesingUnit)
@@ -256,7 +256,7 @@ void AInterpreter::GetThresholds(int32 index, FVector2D& threshold, bool& useThr
 		ImageProcesingUnit->GetThresholds(index, threshold, useThreshold);
 	}
 }
-//stay
+
 void AInterpreter::SetThresholds(int32 index, FVector2D threshold, bool useThreshold)
 {
 	if (ImageProcesingUnit)
