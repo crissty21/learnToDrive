@@ -5,6 +5,12 @@
 #include "CoreMinimal.h"
 #include "WheeledVehiclePawn.h"
 #include "Road.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "IImageWrapperModule.h"
+#include "IImageWrapper.h"
+#include "Camera/CameraComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+
 #include "VehiclePawn.generated.h"
 
 /**
@@ -33,6 +39,9 @@ public:
 	void CruiseControll(float DeltaTime);
 	void KeepRoad();
 
+	int8 PersonalId = 0;
+	int32 ImageId = 0;
+
 	// Called to bind functionality to input
 	UFUNCTION(BlueprintCallable, Category="Movement")
 		void MoveForward(float value);
@@ -55,6 +64,8 @@ protected:
 		USceneComponent* BackPoint = nullptr;
 	UPROPERTY(EditAnywhere)
 		USceneComponent* AdvancePoint = nullptr;
+	UPROPERTY(EditAnywhere)
+		USceneCaptureComponent2D* SceneCaptureComponent = nullptr;
 	UPROPERTY(EditDefaultsOnly)
 		ARoad* Road = nullptr;
 	UPROPERTY(EditDefaultsOnly)
@@ -63,6 +74,10 @@ protected:
 		float MaxSpeed = 100;
 	UPROPERTY(EditDefaultsOnly)
 		bool DrawLine = false;
+	UPROPERTY(EditDefaultsOnly)
+		int32 VideoWidth = 512;
+	UPROPERTY(EditDefaultsOnly)
+		int32 VideoHeight = 128;
 private:
 	float PrevSpeedError = 30.f;
 
@@ -73,6 +88,25 @@ private:
 private:
 	UPROPERTY()
 		class UChaosWheeledVehicleMovementComponent* ChaosWheeledVehicleComponent = nullptr;
+	UPROPERTY()
+		UTextureRenderTarget2D* RenderTarget = nullptr;
+	UPROPERTY()
+		FString ImageFilePath;
+	UPROPERTY()
+		FString extension;
+
+	EImageFormat ImageFormat;
+
+	TSharedPtr<IImageWrapper> ImageWrapper = nullptr;
+	
+	FString CsvFilePath;
 
 	bool BreakLightsState = false;
+
+	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);
+
+	bool SaveCameraViewToDisk(const FString& FilePath);
+
+	void SaveTrainingData();
+
 };

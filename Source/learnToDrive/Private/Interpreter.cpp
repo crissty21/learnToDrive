@@ -80,8 +80,6 @@ void AInterpreter::Tick(float DeltaTime)
 					Texture1->UpdateResource();
 				}
 				RefreshTimer -= 1.0f / RefreshRate;
-
-				SaveTrainingData();
 			}
 		}
 		else
@@ -94,77 +92,6 @@ void AInterpreter::Tick(float DeltaTime)
 		UE_LOG(LogTemp, Warning, TEXT("renderTarget invalid"));
 	}
 }
-
-void AInterpreter::SaveTrainingData()
-{
-	//save image to disk 	
-	FString photoPath = FString::Printf(TEXT("%s_%d%d.%s"), *ImageFilePath, PersonalId, ImageId++, *extension);
-
-	bool bSaved = SaveCameraViewToDisk(photoPath);
-	if (!bSaved)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to save camera view to %s"), *photoPath);
-	}
-
-	//save data to csv 
-	// Generate data and write it to the file
-
-	TArray<FString> DataRow = {
-		photoPath,
-		FString::FromInt(FMath::RandRange(20, 50)),
-		FString::FromInt(FMath::RandRange(20, 50))
-	};
-	if (!WriteRowToCSV(CsvFilePath, DataRow))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to write data row to file %s"), *CsvFilePath);
-	}
-
-	GetParentActor();
-}
-
-bool AInterpreter::WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row)
-{
-	FString RowLine;
-	for (const FString& Cell : Row)
-	{
-		RowLine.Append(Cell + ",");
-	}
-	// Remove the last comma and add a newline character
-	FString dumy = RowLine.LeftChop(1);
-	RowLine.Append("\n");
-
-	// Write the row to the file
-	return FFileHelper::SaveStringToFile(RowLine, *FilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
-}
-
-
-bool AInterpreter::SaveCameraViewToDisk(const FString& FilePath)
-{
-	// Read the captured data and create an image
-	TArray<FColor> Bitmap;
-	FRenderTarget* RenderTargetResource = TextureRenderRef->GameThread_GetRenderTargetResource();
-	if (!RenderTargetResource->ReadPixels(Bitmap))
-	{
-		return false;
-	}
-	
-	// Compress the image
-	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
-	TArray<uint8> CompressedData;
-	if (ImageWrapper->SetRaw(Bitmap.GetData(), Bitmap.GetAllocatedSize(), RenderTargetResource->GetSizeXY().X, RenderTargetResource->GetSizeXY().Y, ERGBFormat::BGRA, 8))
-	{
-		CompressedData = ImageWrapper->GetCompressed();
-	}
-	else
-	{
-		return false;
-	}
-
-	// Save the image to disk
-	return FFileHelper::SaveArrayToFile(CompressedData, *FilePath);
-}
-
 
 void AInterpreter::ReadFrame()
 {
