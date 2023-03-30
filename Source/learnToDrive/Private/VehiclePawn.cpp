@@ -82,7 +82,11 @@ void AVehiclePawn::Tick(float DeltaTime)
  
 	KeepRoad();
 	CruiseControll(DeltaTime);
-	SaveTrainingData();
+	//monitorizeaza delta time
+	if (SaveData)
+	{
+		SaveTrainingData();
+	}
 }
 
 void AVehiclePawn::CruiseControll(float DeltaTime)

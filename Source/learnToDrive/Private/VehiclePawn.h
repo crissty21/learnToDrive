@@ -13,9 +13,6 @@
 
 #include "VehiclePawn.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class AVehiclePawn : public AWheeledVehiclePawn
 {
@@ -74,6 +71,8 @@ protected:
 		float MaxSpeed = 100;
 	UPROPERTY(EditDefaultsOnly)
 		bool DrawLine = false;
+	UPROPERTY(EditDefaultsOnly)
+		bool SaveData = false;
 	UPROPERTY(EditDefaultsOnly)
 		int32 VideoWidth = 512;
 	UPROPERTY(EditDefaultsOnly)
