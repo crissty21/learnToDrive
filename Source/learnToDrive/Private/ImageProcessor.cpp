@@ -17,6 +17,7 @@ void UImageProcessor::BeginPlay()
 	//create LUTs
 	LoadSettingsClear();
 	GenerateLookUpTables();
+
 }
 
 

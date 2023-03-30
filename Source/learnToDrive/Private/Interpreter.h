@@ -4,6 +4,11 @@
 #include "GameFramework/Actor.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/Texture.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "IImageWrapperModule.h"
+#include "IImageWrapper.h"
 
 #include "PreOpenCVHeaders.h"
 #include "OpenCVHelper.h"
@@ -34,7 +39,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
+	int8 PersonalId = 0;
+	int32 ImageId = 0;
 
 	UPROPERTY(BlueprintReadOnly)
 		UTexture2D* Texture1 = nullptr;
@@ -106,16 +112,29 @@ private:
 	cv::Point2f srcPts[4];
 	cv::Point2f destPts[4];
 
+	FString ImageFilePath = FPaths::ProjectSavedDir() / TEXT("ScreenShots/CameraView");
+	FString extension = TEXT("png");
+	EImageFormat ImageFormat = EImageFormat::PNG;
+
+	FString CsvFilePath = FPaths::ProjectSavedDir() / TEXT("Data.csv");
+
+
 	void ConstructTextures();
 	
+
 	void BindInput();
 	
+	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);
 	void ReadFrame();
 	
 	void CreateTextures(cv::Mat& finalImage, cv::Mat& colorData);
 	
 	cv::Mat DrawHistogram(cv::Mat& hist);
 	
+	bool SaveCameraViewToDisk(const FString& FilePath);
+
+	void SaveTrainingData();
+
 	void GetHistogramPeaks(cv::Mat& hist, cv::Point2i& leftMax, cv::Point2i& rightMax);
 	
 	void CreateAndDrawPerspectiveLines(cv::Mat& colorData);

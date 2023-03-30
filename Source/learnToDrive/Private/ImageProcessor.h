@@ -78,6 +78,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Post Procces Binary")
 		bool UseBlur = false;
 
+
 	const cv::Mat elementErode = cv::getStructuringElement(cv::MORPH_RECT,
 		cv::Size(2 * ErosionSize + 1, 2 * ErosionSize + 1),
 		cv::Point(ErosionSize, ErosionSize));

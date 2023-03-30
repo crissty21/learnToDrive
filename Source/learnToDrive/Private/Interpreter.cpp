@@ -2,6 +2,7 @@
 #include "Interpreter.h"
 //#include "Components/InputComponent.h"
 #include "ImageProcessor.h"
+#include "Misc/DateTime.h"
 
 AInterpreter::AInterpreter()
 {
@@ -79,6 +80,8 @@ void AInterpreter::Tick(float DeltaTime)
 					Texture1->UpdateResource();
 				}
 				RefreshTimer -= 1.0f / RefreshRate;
+
+				SaveTrainingData();
 			}
 		}
 		else
@@ -92,12 +95,85 @@ void AInterpreter::Tick(float DeltaTime)
 	}
 }
 
+void AInterpreter::SaveTrainingData()
+{
+	//save image to disk 	
+	FString photoPath = FString::Printf(TEXT("%s_%d%d.%s"), *ImageFilePath, PersonalId, ImageId++, *extension);
+
+	bool bSaved = SaveCameraViewToDisk(photoPath);
+	if (!bSaved)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to save camera view to %s"), *photoPath);
+	}
+
+	//save data to csv 
+	// Generate data and write it to the file
+
+	TArray<FString> DataRow = {
+		photoPath,
+		FString::FromInt(FMath::RandRange(20, 50)),
+		FString::FromInt(FMath::RandRange(20, 50))
+	};
+	if (!WriteRowToCSV(CsvFilePath, DataRow))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to write data row to file %s"), *CsvFilePath);
+	}
+
+	GetParentActor();
+}
+
+bool AInterpreter::WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row)
+{
+	FString RowLine;
+	for (const FString& Cell : Row)
+	{
+		RowLine.Append(Cell + ",");
+	}
+	// Remove the last comma and add a newline character
+	FString dumy = RowLine.LeftChop(1);
+	RowLine.Append("\n");
+
+	// Write the row to the file
+	return FFileHelper::SaveStringToFile(RowLine, *FilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+}
+
+
+bool AInterpreter::SaveCameraViewToDisk(const FString& FilePath)
+{
+	// Read the captured data and create an image
+	TArray<FColor> Bitmap;
+	FRenderTarget* RenderTargetResource = TextureRenderRef->GameThread_GetRenderTargetResource();
+	if (!RenderTargetResource->ReadPixels(Bitmap))
+	{
+		return false;
+	}
+	
+	// Compress the image
+	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+	TArray<uint8> CompressedData;
+	if (ImageWrapper->SetRaw(Bitmap.GetData(), Bitmap.GetAllocatedSize(), RenderTargetResource->GetSizeXY().X, RenderTargetResource->GetSizeXY().Y, ERGBFormat::BGRA, 8))
+	{
+		CompressedData = ImageWrapper->GetCompressed();
+	}
+	else
+	{
+		return false;
+	}
+
+	// Save the image to disk
+	return FFileHelper::SaveArrayToFile(CompressedData, *FilePath);
+}
+
+
 void AInterpreter::ReadFrame()
 {
 	//read the pixels
-	TextureRenderRef->GameThread_GetRenderTargetResource()->ReadPixels(ColorData);
+	FRenderTarget* renderTargetResource = TextureRenderRef->GameThread_GetRenderTargetResource();
+	renderTargetResource->ReadPixels(ColorData);
 	//create a mat with the data from pixels 
-	cv::Mat colorData = cv::Mat(cv::Size(512,128), CV_8UC4, ColorData.GetData());
+	cv::Mat colorData = cv::Mat(cv::Size(renderTargetResource->GetSizeXY().X, renderTargetResource->GetSizeXY().Y), CV_8UC4, ColorData.GetData());
+	
 
 	if (DrawPerspectiveLines)
 	{
@@ -170,6 +246,7 @@ void AInterpreter::CreateAndDrawPerspectiveLines(cv::Mat& colorData)
 	line(colorData, cv::Point(srcPts[2]), cv::Point(srcPts[3]), cv::Scalar(255, 0, 0, 255), 2);
 	line(colorData, cv::Point(srcPts[3]), cv::Point(srcPts[0]), cv::Scalar(255, 0, 0, 255), 2);
 }
+
 
 cv::Mat AInterpreter::DrawHistogram(cv::Mat& hist)
 {
