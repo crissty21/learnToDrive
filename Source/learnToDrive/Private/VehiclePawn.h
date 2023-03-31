@@ -51,6 +51,8 @@ public:
 		float DesiredSpeed = 80.f;
 	UPROPERTY(EditDefaultsOnly)
 		int8 TickingFreq = 1;
+	UPROPERTY(EditAnywhere)
+		int8 PersonalID = 0;
 
 	UFUNCTION()
 		float GetSteering();

@@ -61,8 +61,8 @@ void AVehiclePawn::BeginPlay()
 		TrainingDataCapturer->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
 		TrainingDataCapturer->bCaptureEveryFrame = false;
 		TrainingDataCapturer->Parent = this;
-		TrainingDataCapturer->PersonalId = 0;
-		TrainingDataCapturer->PrimaryComponentTick.TickInterval = 1.0f / TickingFreq; // Tick at 1Hz
+		TrainingDataCapturer->PersonalId = PersonalID;
+		TrainingDataCapturer->PrimaryComponentTick.TickInterval = 1.0f / TickingFreq; 
 	}
 }
 
@@ -98,8 +98,8 @@ void AVehiclePawn::CruiseControll(float DeltaTime)
 	float i = Ki * IntegralError;
 
 	// Derivative term
-	float DerivativeError = (errorKPH - PrevSpeedError) / DeltaTime;
-	float d = Kd * DerivativeError;
+	float derivativeError = (errorKPH - PrevSpeedError) / DeltaTime;
+	float d = Kd * derivativeError;
 	//derivate
 	
 	PrevSpeedError = errorKPH;

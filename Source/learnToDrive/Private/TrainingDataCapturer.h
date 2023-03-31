@@ -5,9 +5,6 @@
 #include "CoreMinimal.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
-#include "IImageWrapperModule.h"
-#include "IImageWrapper.h"
-#include "Brain.h"
 
 #include "TrainingDataCapturer.generated.h"
 
@@ -18,11 +15,9 @@ class UTrainingDataCapturer : public USceneCaptureComponent2D
 	GENERATED_BODY()
 
 public:
-
 	UTrainingDataCapturer();
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)override;
-
 
 	int8 PersonalId = 0;
 
@@ -30,13 +25,12 @@ public:
 
 	int8 TickingFreq = 1;
 
-
 protected:
 	virtual void BeginPlay() override;
 	UPROPERTY(EditDefaultsOnly)
-		int32 VideoWidth = 512;
+		int32 VideoWidth;
 	UPROPERTY(EditDefaultsOnly)
-		int32 VideoHeight = 128;
+		int32 VideoHeight;
 
 private:
 	UPROPERTY()
@@ -46,19 +40,10 @@ private:
 	UPROPERTY()
 		FString extension;
 
-	EImageFormat ImageFormat;
 
-	TSharedPtr<IImageWrapper> ImageWrapper = nullptr;
-
-	FString CsvFilePath;
 	int32 ImageId = 0;
 	float DT;
-	ABrain* gameMode = nullptr;
+	class ABrain* gameMode = nullptr;
 
-	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);
-
-	bool SaveCameraViewToDisk(const FString& FilePath);
-
-	void SaveTrainingData();
-
+	void SendTrainingData();
 };

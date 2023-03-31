@@ -22,44 +22,34 @@ void ABrain::Tick(float DeltaTime)
 void ABrain::BeginPlay()
 {
 	Super::BeginPlay();
-	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-	ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
 
+	IImageWrapperModule& imageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	ImageWrapper = imageWrapperModule.CreateImageWrapper(ImageFormat);
 }
 
-void ABrain::AddImageToSave(FString path, TArray<FColor> data)
+bool ABrain::WriteRowToCSV(const FString& filePath, const TArray<FString>& row)
 {
-	photos.Enqueue(TPair<FString, TArray<FColor>>(path, data));
-}
-
-void ABrain::AddDataToSave(TArray<FString> Row)
-{
-	CSVdata.Enqueue(Row);
-}
-
-bool ABrain::WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row)
-{
-    FString RowLine;
-    for (const FString& Cell : Row)
+    FString rowLine;
+    for (const FString& Cell : row)
     {
-        RowLine.Append(Cell + ",");
+        rowLine.Append(Cell + ",");
     }
     // Remove the last comma and add a newline character
-    FString dumy = RowLine.LeftChop(1);
-    RowLine.Append("\n");
+    FString dumy = rowLine.LeftChop(1);
+    rowLine.Append("\n");
 
     // Write the row to the file
-    return FFileHelper::SaveStringToFile(RowLine, *FilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+    return FFileHelper::SaveStringToFile(rowLine, *filePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
 }
 
-bool ABrain::SaveCameraViewToDisk(const FString& FilePath, TArray<FColor> Bitmap)
+bool ABrain::SaveCameraViewToDisk(const FString& filePath, TArray<FColor> bitmap)
 {
 	// Compress the image
 
-	TArray<uint8> CompressedData;
-	if (ImageWrapper->SetRaw(Bitmap.GetData(), Bitmap.GetAllocatedSize(), VideoWidth, VideoHeight, ERGBFormat::BGRA, 8))
+	TArray<uint8> compressedData;
+	if (ImageWrapper->SetRaw(bitmap.GetData(), bitmap.GetAllocatedSize(), VideoWidth, VideoHeight, ERGBFormat::BGRA, 8))
 	{
-		CompressedData = ImageWrapper->GetCompressed();
+		compressedData = ImageWrapper->GetCompressed();
 	}
 	else
 	{
@@ -67,24 +57,21 @@ bool ABrain::SaveCameraViewToDisk(const FString& FilePath, TArray<FColor> Bitmap
 	}
 
 	// Save the image to disk
-	return FFileHelper::SaveArrayToFile(CompressedData, *FilePath);
+	return FFileHelper::SaveArrayToFile(compressedData, *filePath);
 }
 
 void ABrain::SaveTrainingData()
 {
-
 	if (photos.IsEmpty() == false)
 	{
-
 		TPair<FString, TArray<FColor>>* currentPhoto = photos.Peek();
-		/*bool bSaved = SaveCameraViewToDisk(currentPhoto->Key, currentPhoto->Value);
+		bool bSaved = SaveCameraViewToDisk(currentPhoto->Key, currentPhoto->Value);
 		if (!bSaved)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to save camera view to %s"), *currentPhoto->Key);
-		}*/
+		}
 		photos.Pop();
 	}
-
 
 	//save data to csv 
 	// Generate data and write it to the file
@@ -96,4 +83,14 @@ void ABrain::SaveTrainingData()
 		}
 		CSVdata.Pop();
 	}
+}
+
+void ABrain::AddImageToSave(FString path, TArray<FColor> data)
+{
+	photos.Enqueue(TPair<FString, TArray<FColor>>(path, data));
+}
+
+void ABrain::AddDataToSave(TArray<FString> row)
+{
+	CSVdata.Enqueue(row);
 }
