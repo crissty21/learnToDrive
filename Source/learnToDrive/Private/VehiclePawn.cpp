@@ -13,23 +13,12 @@ AVehiclePawn::AVehiclePawn()
 	FrontPoint = CreateDefaultSubobject<USceneComponent>("FrontPoint");
 	BackPoint = CreateDefaultSubobject<USceneComponent>("BackPoint");
 	AdvancePoint = CreateDefaultSubobject<USceneComponent>("AdvancePoint");
-	SceneCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>("CameraComponent");
+
 
 	FrontPoint->SetupAttachment(RootComponent);
 	BackPoint->SetupAttachment(RootComponent);
 	AdvancePoint->SetupAttachment(RootComponent);
-	SceneCaptureComponent->SetupAttachment(RootComponent);
 
-	SceneCaptureComponent->SetRelativeLocation(FVector(142, 0, 100));
-	SceneCaptureComponent->SetRelativeRotation(FRotator(0, -10, 0));
-	SceneCaptureComponent->FOVAngle = 120;
-	SceneCaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-	SceneCaptureComponent->bCaptureEveryFrame = false;
-
-	ImageFilePath = FPaths::ProjectSavedDir() / TEXT("ScreenShots/CameraView");
-	extension = TEXT("png");
-	ImageFormat = EImageFormat::PNG;
-	CsvFilePath = FPaths::ProjectSavedDir() / TEXT("Data.csv");
 }
 
 void AVehiclePawn::BeginPlay()
@@ -45,8 +34,9 @@ void AVehiclePawn::BeginPlay()
 
 	//cruise controll
 	PrevSpeedError = 30.f;
-	Kp = 0.5;
-	Kd = 0.01;
+	Kp = 0.5f;
+	Kd = 0.01f;
+	Ki = 0.f;
 
 	Road = Cast<ARoad>(UGameplayStatics::GetActorOfClass(this, ARoad::StaticClass()));
 	if (Road == nullptr)
@@ -59,13 +49,21 @@ void AVehiclePawn::BeginPlay()
 	BackPoint->SetRelativeLocation(FVector(-125, 0, 0));
 	AdvancePoint->SetRelativeLocation(FVector(400, 0, 0));
 
-	RenderTarget = NewObject<UTextureRenderTarget2D>();
-	RenderTarget->InitCustomFormat(VideoWidth, VideoHeight, PF_B8G8R8A8, false);
+	if (SaveData)
+	{
+		TrainingDataCapturer = NewObject<UTrainingDataCapturer>(this, UTrainingDataCapturer::StaticClass(), TEXT("DataCapturerComponent"), RF_Transient);
+		TrainingDataCapturer->RegisterComponent();
+		TrainingDataCapturer->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
-	SceneCaptureComponent->TextureTarget = RenderTarget;
-
-	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-	ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+		TrainingDataCapturer->SetRelativeLocation(FVector(142, 0, 100));
+		TrainingDataCapturer->SetRelativeRotation(FRotator(0, -10, 0));
+		TrainingDataCapturer->FOVAngle = 120;
+		TrainingDataCapturer->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+		TrainingDataCapturer->bCaptureEveryFrame = false;
+		TrainingDataCapturer->Parent = this;
+		TrainingDataCapturer->PersonalId = 0;
+		TrainingDataCapturer->PrimaryComponentTick.TickInterval = 1.0f / TickingFreq; // Tick at 1Hz
+	}
 }
 
 void AVehiclePawn::Tick(float DeltaTime)
@@ -81,37 +79,32 @@ void AVehiclePawn::Tick(float DeltaTime)
 	}
  
 	KeepRoad();
-	CruiseControll(DeltaTime);
-	//monitorizeaza delta time
-	if (SaveData)
-	{
-		SaveTrainingData();
-	}
+	CruiseControll(DeltaTime);	
 }
 
 void AVehiclePawn::CruiseControll(float DeltaTime)
 {
 	//current speed
-	float KPH = GetVehicleMovement()->GetForwardSpeed() * 0.036;
+	float KPH = GetVehicleMovement()->GetForwardSpeed() * 0.036f;
 	//error
 	float errorKPH = DesiredSpeed - KPH;
 
+
+	// Proportional term
+	float p = Kp * errorKPH;
+
+	// Integral term
+	IntegralError += errorKPH * DeltaTime;
+	float i = Ki * IntegralError;
+
+	// Derivative term
+	float DerivativeError = (errorKPH - PrevSpeedError) / DeltaTime;
+	float d = Kd * DerivativeError;
 	//derivate
-	float speedErrorDer = (errorKPH - PrevSpeedError) / DeltaTime;
+	
 	PrevSpeedError = errorKPH;
 
-
-	float value = Kp * errorKPH + Kd * speedErrorDer;
-
-	if (value > 1)
-	{
-		value = 1;
-	}
-	if (value < -1)
-	{
-		value = -1;
-	}
-
+	float value = FMath::Clamp(p + i + d, -1.0f, 1.0f);
 	
 	MoveForward(value);
 }
@@ -210,83 +203,38 @@ void AVehiclePawn::ResetCar()
 	GetMesh()->SetPhysicsLinearVelocity(FVector::ZeroVector);
 }
 
-bool AVehiclePawn::WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row)
+float AVehiclePawn::GetSteering()
 {
-	FString RowLine;
-	for (const FString& Cell : Row)
+	if (ChaosWheeledVehicleComponent == nullptr)
 	{
-		RowLine.Append(Cell + ",");
+		return 0;
 	}
-	// Remove the last comma and add a newline character
-	FString dumy = RowLine.LeftChop(1);
-	RowLine.Append("\n");
-
-	// Write the row to the file
-	return FFileHelper::SaveStringToFile(RowLine, *FilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+	return ChaosWheeledVehicleComponent->GetSteeringInput();
 }
 
-bool AVehiclePawn::SaveCameraViewToDisk(const FString& FilePath)
+float AVehiclePawn::GetThrottle()
 {
-	if (!SceneCaptureComponent || VideoWidth <= 0 || VideoHeight <= 0 || FilePath.IsEmpty())
+	if (ChaosWheeledVehicleComponent == nullptr)
 	{
-		return false;
+		return 0;
 	}
-	// Create a render target texture with the desired dimensions
-	SceneCaptureComponent->CaptureScene();
-
-	// Read the captured data and create an image
-	TArray<FColor> Bitmap;
-	if (!RenderTarget)
-	{
-		return false;
-	}
-	FRenderTarget* RenderTargetResource = RenderTarget->GameThread_GetRenderTargetResource();
-	if (!RenderTargetResource->ReadPixels(Bitmap))
-	{
-		return false;
-	}
-
-	// Compress the image
-	
-	TArray<uint8> CompressedData;
-	if (ImageWrapper->SetRaw(Bitmap.GetData(), Bitmap.GetAllocatedSize(), RenderTargetResource->GetSizeXY().X, RenderTargetResource->GetSizeXY().Y, ERGBFormat::BGRA, 8))
-	{
-		CompressedData = ImageWrapper->GetCompressed();
-	}
-	else
-	{
-		return false;
-	}
-
-	// Save the image to disk
-	return FFileHelper::SaveArrayToFile(CompressedData, *FilePath);
+	return ChaosWheeledVehicleComponent->GetThrottleInput();
 }
 
-void AVehiclePawn::SaveTrainingData()
+float AVehiclePawn::GetBreak()
 {
-	//save image to disk 	
-	FString photoPath = FString::Printf(TEXT("%s_%d%d.%s"), *ImageFilePath, PersonalId, ImageId++, *extension);
-
-	bool bSaved = SaveCameraViewToDisk(photoPath);
-	if (!bSaved)
+	if (ChaosWheeledVehicleComponent == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to save camera view to %s"), *photoPath);
+		return 0;
 	}
-
-	//save data to csv 
-	// Generate data and write it to the file
-
-	TArray<FString> DataRow = {
-		photoPath,
-		FString::SanitizeFloat(ChaosWheeledVehicleComponent->GetSteeringInput()),
-		FString::SanitizeFloat(ChaosWheeledVehicleComponent->GetThrottleInput()),
-		FString::SanitizeFloat(ChaosWheeledVehicleComponent->GetBrakeInput()),
-		FString::SanitizeFloat(ChaosWheeledVehicleComponent->GetForwardSpeed())
-	};
-	if (!WriteRowToCSV(CsvFilePath, DataRow))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to write data row to file %s"), *CsvFilePath);
-	}
+	return ChaosWheeledVehicleComponent->GetBrakeInput();
 }
 
-
+float AVehiclePawn::GetSpeed()
+{
+    if (ChaosWheeledVehicleComponent == nullptr)
+	{
+		return 0;
+	}
+	return ChaosWheeledVehicleComponent->GetForwardSpeedMPH();
+}

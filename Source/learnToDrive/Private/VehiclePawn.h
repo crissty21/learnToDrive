@@ -5,11 +5,9 @@
 #include "CoreMinimal.h"
 #include "WheeledVehiclePawn.h"
 #include "Road.h"
-#include "Kismet/KismetRenderingLibrary.h"
-#include "IImageWrapperModule.h"
-#include "IImageWrapper.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "TrainingDataCapturer.h"
 
 #include "VehiclePawn.generated.h"
 
@@ -36,8 +34,6 @@ public:
 	void CruiseControll(float DeltaTime);
 	void KeepRoad();
 
-	int8 PersonalId = 0;
-	int32 ImageId = 0;
 
 	// Called to bind functionality to input
 	UFUNCTION(BlueprintCallable, Category="Movement")
@@ -53,6 +49,17 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float DesiredSpeed = 80.f;
+	UPROPERTY(EditDefaultsOnly)
+		int8 TickingFreq = 1;
+
+	UFUNCTION()
+		float GetSteering();
+	UFUNCTION()
+		float GetThrottle();
+	UFUNCTION()
+		float GetBreak();
+	UFUNCTION()
+		float GetSpeed();
 
 protected:
 	UPROPERTY(EditAnywhere)
@@ -61,8 +68,11 @@ protected:
 		USceneComponent* BackPoint = nullptr;
 	UPROPERTY(EditAnywhere)
 		USceneComponent* AdvancePoint = nullptr;
+
 	UPROPERTY(EditAnywhere)
-		USceneCaptureComponent2D* SceneCaptureComponent = nullptr;
+		UTrainingDataCapturer* TrainingDataCapturer = nullptr;
+
+
 	UPROPERTY(EditDefaultsOnly)
 		ARoad* Road = nullptr;
 	UPROPERTY(EditDefaultsOnly)
@@ -73,39 +83,22 @@ protected:
 		bool DrawLine = false;
 	UPROPERTY(EditDefaultsOnly)
 		bool SaveData = false;
-	UPROPERTY(EditDefaultsOnly)
-		int32 VideoWidth = 512;
-	UPROPERTY(EditDefaultsOnly)
-		int32 VideoHeight = 128;
+
+	UPROPERTY(EditAnywhere, Category = "PID")
+		float Kp = 1.0f;
+	UPROPERTY(EditAnywhere, Category = "PID")
+		float Ki = 0.0f;
+	UPROPERTY(EditAnywhere, Category = "PID")
+		float Kd = 0.0f;
 private:
 	float PrevSpeedError = 30.f;
 
-	float Kp = 0.5;
-	float Kd = 0.01;
-
 	
-private:
+	float IntegralError = 0.0f;
+
 	UPROPERTY()
 		class UChaosWheeledVehicleMovementComponent* ChaosWheeledVehicleComponent = nullptr;
-	UPROPERTY()
-		UTextureRenderTarget2D* RenderTarget = nullptr;
-	UPROPERTY()
-		FString ImageFilePath;
-	UPROPERTY()
-		FString extension;
-
-	EImageFormat ImageFormat;
-
-	TSharedPtr<IImageWrapper> ImageWrapper = nullptr;
-	
-	FString CsvFilePath;
 
 	bool BreakLightsState = false;
-
-	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);
-
-	bool SaveCameraViewToDisk(const FString& FilePath);
-
-	void SaveTrainingData();
 
 };
