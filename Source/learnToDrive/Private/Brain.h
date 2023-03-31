@@ -26,6 +26,9 @@ public:
 		int32 VideoWidth = 512;
 	UPROPERTY(EditDefaultsOnly)
 		int32 VideoHeight = 128;
+
+	void AddImageToSave(FString path, TArray<FColor> data);
+	void AddDataToSave(TArray<FString> Row);
 	
 protected:
 	// Called when the game starts or when spawned
@@ -41,9 +44,6 @@ private:
 	TQueue<TPair<FString, TArray<FColor>>> photos;
 
 	TQueue<TArray<FString>> CSVdata;
-
-	void AddImageToSave(FString path, TArray<FColor> data);
-	void AddDataToSave(TArray<FString> Row);
 
 	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);
 

@@ -7,6 +7,7 @@
 #include "Kismet/KismetRenderingLibrary.h"
 #include "IImageWrapperModule.h"
 #include "IImageWrapper.h"
+#include "Brain.h"
 
 #include "TrainingDataCapturer.generated.h"
 
@@ -51,6 +52,8 @@ private:
 
 	FString CsvFilePath;
 	int32 ImageId = 0;
+	float DT;
+	ABrain* gameMode = nullptr;
 
 	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);
 

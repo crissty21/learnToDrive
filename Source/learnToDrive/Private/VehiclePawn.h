@@ -80,6 +80,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 		float MaxSpeed = 100;
 	UPROPERTY(EditDefaultsOnly)
+		float BreakTolerance = 0.5f;
+	UPROPERTY(EditDefaultsOnly)
 		bool DrawLine = false;
 	UPROPERTY(EditDefaultsOnly)
 		bool SaveData = false;

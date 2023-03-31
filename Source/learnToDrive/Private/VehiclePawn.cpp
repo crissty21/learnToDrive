@@ -162,7 +162,7 @@ void AVehiclePawn::MoveForward(float value)
 			BreakLights(false);
 		}
 	}
-	else
+	else if (value <= -BreakTolerance)
 	{
 		ChaosWheeledVehicleComponent->SetBrakeInput(value * -1);
 		ChaosWheeledVehicleComponent->SetThrottleInput(0);

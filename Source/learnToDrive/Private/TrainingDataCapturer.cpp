@@ -29,12 +29,19 @@ void UTrainingDataCapturer::BeginPlay()
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
     ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
 
+	gameMode = (ABrain*)GetWorld()->GetAuthGameMode();
+	if (gameMode == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to cast gamemode to ABrain"));
+	}
+
 }
 void UTrainingDataCapturer::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	// Check if the game is running
     SaveTrainingData();
+	DT = DeltaTime;
 }
 
 bool UTrainingDataCapturer::WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row)
@@ -73,7 +80,8 @@ bool UTrainingDataCapturer::SaveCameraViewToDisk(const FString& FilePath)
 	{
 		return false;
 	}
-
+	gameMode->AddImageToSave(FilePath, Bitmap);
+	/*
 	// Compress the image
 
 	TArray<uint8> CompressedData;
@@ -87,7 +95,8 @@ bool UTrainingDataCapturer::SaveCameraViewToDisk(const FString& FilePath)
 	}
 
 	// Save the image to disk
-	return FFileHelper::SaveArrayToFile(CompressedData, *FilePath);
+	return FFileHelper::SaveArrayToFile(CompressedData, *FilePath);*/
+	return true;
 }
 
 void UTrainingDataCapturer::SaveTrainingData()
@@ -95,7 +104,7 @@ void UTrainingDataCapturer::SaveTrainingData()
 	//save image to disk 	
 	FString photoPath = FString::Printf(TEXT("%s_%d%d.%s"), *ImageFilePath, PersonalId, ImageId++, *extension);
 
-	//bool bSaved = SaveCameraViewToDisk(photoPath);
+	bool bSaved = SaveCameraViewToDisk(photoPath);
 	if (!true)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to save camera view to %s"), *photoPath);
@@ -114,12 +123,15 @@ void UTrainingDataCapturer::SaveTrainingData()
 		FString::SanitizeFloat(Parent->GetSteering()),
 		FString::SanitizeFloat(Parent->GetThrottle()),
 		FString::SanitizeFloat(Parent->GetBreak()),
-		FString::SanitizeFloat(Parent->GetSpeed())
+		FString::SanitizeFloat(Parent->GetSpeed()),
+		FString::SanitizeFloat(DT)
 	};
+	gameMode->AddDataToSave(DataRow);
+	/*
 	if (!WriteRowToCSV(CsvFilePath, DataRow))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to write data row to file %s"), *CsvFilePath);
-	}
+	}*/
 }
 
 

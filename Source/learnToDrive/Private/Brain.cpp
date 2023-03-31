@@ -5,17 +5,23 @@
 
 ABrain::ABrain()
 {
+
+	// Enable tick and set the tick interval
+	PrimaryActorTick.bCanEverTick = true;
 	ImageFormat = EImageFormat::JPEG;
 	CsvFilePath = FPaths::ProjectSavedDir() / TEXT("Data.csv");
 }
 
 void ABrain::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
+
 	SaveTrainingData();
 }
 
 void ABrain::BeginPlay()
 {
+	Super::BeginPlay();
 	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
 
@@ -69,12 +75,13 @@ void ABrain::SaveTrainingData()
 
 	if (photos.IsEmpty() == false)
 	{
+
 		TPair<FString, TArray<FColor>>* currentPhoto = photos.Peek();
-		bool bSaved = SaveCameraViewToDisk(currentPhoto->Key, currentPhoto->Value);
+		/*bool bSaved = SaveCameraViewToDisk(currentPhoto->Key, currentPhoto->Value);
 		if (!bSaved)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to save camera view to %s"), *currentPhoto->Key);
-		}
+		}*/
 		photos.Pop();
 	}
 
