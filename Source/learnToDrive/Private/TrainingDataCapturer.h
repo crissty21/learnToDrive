@@ -50,7 +50,6 @@ private:
 	TSharedPtr<IImageWrapper> ImageWrapper = nullptr;
 
 	FString CsvFilePath;
-	float DT;
 	int32 ImageId = 0;
 
 	bool WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row);

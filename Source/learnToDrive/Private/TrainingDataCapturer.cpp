@@ -35,8 +35,6 @@ void UTrainingDataCapturer::TickComponent(float DeltaTime, ELevelTick TickType, 
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	// Check if the game is running
     SaveTrainingData();
-	DT = DeltaTime;
-    
 }
 
 bool UTrainingDataCapturer::WriteRowToCSV(const FString& FilePath, const TArray<FString>& Row)
@@ -116,8 +114,7 @@ void UTrainingDataCapturer::SaveTrainingData()
 		FString::SanitizeFloat(Parent->GetSteering()),
 		FString::SanitizeFloat(Parent->GetThrottle()),
 		FString::SanitizeFloat(Parent->GetBreak()),
-		FString::SanitizeFloat(Parent->GetSpeed()),
-		FString::SanitizeFloat(DT)
+		FString::SanitizeFloat(Parent->GetSpeed())
 	};
 	if (!WriteRowToCSV(CsvFilePath, DataRow))
 	{
